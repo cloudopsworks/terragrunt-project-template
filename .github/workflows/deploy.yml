@@ -102,13 +102,13 @@ jobs:
           token: ${{ secrets.BOT_TOKEN }}
           output: CHANGELOG.md
       # Create GitHub Release
-      - name: GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          name: "Release ${{ github.ref_name }}"
-          body_path: CHANGELOG.md
-          prerelease: ${{ steps.workspace.outputs.isPreRelease }}
+#      - name: GitHub Release
+#        uses: softprops/action-gh-release@v2
+#        with:
+#          token: ${{ secrets.BOT_TOKEN }}
+#          name: "Release ${{ github.ref_name }}"
+#          body_path: CHANGELOG.md
+#          prerelease: ${{ steps.workspace.outputs.isPreRelease }}
 #      # Push the changes to Git TAG before deploying anything
 #      - name: Release Version
 #        if: github.ref == 'master'
