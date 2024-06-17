@@ -2,11 +2,17 @@
 #            On GitHub: https://github.com/cloudopsworks
 #            Distributed Under Apache v2.0 License
 #
-name: Terraform Project Deploy
+name: Terragrunt Project Deploy
 on:
   workflow_dispatch:
     inputs:
+      action:
+        type: string
+        description: 'The action to perfotm: plan/apply/destroy'
+        required: true
+        default: 'apply'
       working_directory:
+        type: choice
         description: 'The working directory to use'
         required: true
         default: '/'
@@ -82,7 +88,7 @@ env:
   tg_version: 0.58.5
 jobs:
   prevalidate:
-    if: ${{ startsWith(github.ref,'refs/heads/release/') || startsWith(github.ref,'refs/heads/develop') || startsWith(github.ref,'refs/heads/support/') || startsWith(github.ref,'refs/tags/v') }}
+    #if: ${{ startsWith(github.ref,'refs/heads/release/') || startsWith(github.ref,'refs/heads/develop') || startsWith(github.ref,'refs/heads/support/') || startsWith(github.ref,'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       # Get the owner repo
@@ -106,7 +112,7 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
@@ -123,7 +129,7 @@ jobs:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
       - name: Create Plan Directory
         run: mkdir -p ./.plans
-      - name: Terragrunt Plan ${{ inputs.working_directory }}
+      - name: Terragrunt ${{ inputs.action }} ${{ inputs.working_directory }}
         uses: gruntwork-io/terragrunt-action@v2
         id: plan
         continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
@@ -136,22 +142,7 @@ jobs:
         with:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
-          tg_command: "plan --terragrunt-non-interactive --terragrunt-source-update -out ./.plans/plan.out"
-          tg_dir: ${{ inputs.working_directory }}
-      - name: Terragrunt Apply ${{ inputs.working_directory }}
-        uses: gruntwork-io/terragrunt-action@v2
-        id: plan
-        continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
-          HELM_EXPERIMENTAL_OCI: "1"
-          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        with:
-          tofu_version: ${{ env.tofu_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_command: "apply --terragrunt-non-interactive ./.plans/plan.out"
+          tg_command: "run-all ${{ inputs.action }} --terragrunt-non-interactive"
           tg_dir: ${{ inputs.working_directory }}
       # Create a VERSION file to use through the build
       - name: Set Version File

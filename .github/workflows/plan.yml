@@ -40,7 +40,7 @@ jobs:
     outputs:
       auto_approve: ${{ steps.check_automatic.outputs.result }}
     steps:
-      - uses: actions/labeler@v4
+      - uses: actions/labeler@v5
         with:
           repo-token: ${{ secrets.BOT_TOKEN }}
 
@@ -53,7 +53,7 @@ jobs:
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.BOT_TOKEN }}
           ref: ${{ github.head_ref }}
@@ -126,7 +126,7 @@ jobs:
           tg_dir: ${{ env.workind_dir }}
           tg_comment: 1
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: environment-release-plan
           path: |
@@ -149,7 +149,7 @@ jobs:
 
       - name: Update Terragrunt folders
         id: terragrunt_folders
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
@@ -189,7 +189,7 @@ jobs:
             const terragruntFiles = execSync(`find ${root} -name terragrunt.hcl | grep -v .terragrunt-cache`).toString().split('\n');
             // Strip the root prefix from all terragruntFiles.
             terragruntFiles.forEach((file, index) => {
-              terragruntFiles[index] = file.replace(root, '');
+              terragruntFiles[index] = file.replace(root + '/', '');
             });
             const terragruntFolders = terragruntFiles.map( file => path.dirname(file) );
             // Generate all intermediate folders for each terragruntFolders up to root, strip the root string on all outputs, 
@@ -205,7 +205,7 @@ jobs:
             const terragruntFoldersSet = new Set(allFolders);
             // Remove the element at index 0, which is an empty string.            
             terragruntFoldersSet.delete('');
-            terragruntFoldersSet.delete('.');
+            //terragruntFoldersSet.delete('.');
             const terragruntFoldersList = Array.from(terragruntFoldersSet).sort();
             
             console.log(JSON.stringify(terragruntFoldersList));
@@ -236,7 +236,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.base_ref != 'master' && github.base_ref != 'main' && ( ! startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
@@ -254,7 +254,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
@@ -271,7 +271,7 @@ jobs:
           cmd: yq -o=json -I=0 '.config.reviewers' ./cloudopsworks-ci.yaml
 
       - name: Add review and approval labels
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
@@ -314,7 +314,7 @@ jobs:
     steps:
       - name: Set DO-NOT-MERGE if not in last step
         id: check
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           result-encoding: string

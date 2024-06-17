@@ -92,7 +92,7 @@ jobs:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
 
       - name: Contributor list form JSON
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
@@ -132,7 +132,7 @@ jobs:
 
       - name: Advanced Protection on GitFlow
         if: ${{ steps.branch_protection_rules.outputs.result == 1 }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
@@ -463,7 +463,7 @@ jobs:
             await github.graphql(protection_rule, vars);
 
       - name: Advanced Deployment Environments Creation
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
