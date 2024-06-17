@@ -1,5 +1,0 @@
-s3:
-  bucket: '4wrd-terraform-state'
-  region: 'us-east-1'
-  kms_key_id: 'bf4ed7e2-cbb8-4e71-86c0-6eaf03febd0e'
-  dynamodb_table: '4wrd_terraform_state'

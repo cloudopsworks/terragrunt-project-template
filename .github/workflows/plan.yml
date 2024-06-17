@@ -3,7 +3,7 @@
 #            On GitHub: https://github.com/cloudopsworks
 #            Distributed Under Apache v2.0 License
 #
-name: Terraform Project Plan on Pull request
+name: Terragrunt Project Plan on Pull request
 on:
   pull_request:
     branches:
@@ -39,7 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       auto_approve: ${{ steps.check_automatic.outputs.result }}
-      is_release: ${{ steps.workspace.outputs.isRelease }}
     steps:
       - uses: actions/labeler@v4
         with:
@@ -57,6 +56,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.BOT_TOKEN }}
+          ref: ${{ github.head_ref }}
 
       - name: Check if automatic
         id: check_automatic
@@ -67,15 +67,14 @@ jobs:
       - name: Terragrunt Format Check
         uses: gruntwork-io/terragrunt-action@v2
         id: fmt
-        run: terraform fmt -check
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         with:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
-          tg_command: "hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-source-update --terragrunt-diff"
-          working_dir: ${{ env.workind_dir }}
+          tg_command: "hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff"
+          tg_dir: ${{ env.workind_dir }}
           tg_comment: 1
 
       # Get source of Configuration parameters (sensitive information)
@@ -91,67 +90,20 @@ jobs:
         with:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
 
-      # Set the appropriate workspace from what is configured from the deploy_conf step
-      # Result is stored as JSON with the format found on the cd.deployments section on cloudopsworks-ci.yaml
-      - name: Set the appropriate workspace
-        id: workspace
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const deployments = JSON.parse('${{ steps.deploy_conf.outputs.result }}');
-            const branch = '${{ github.head_ref }}';
-            const base_branch = '${{ github.base_ref }}';
-            
-            var tfWorkspace;
-            var tfPrefix;
-            var isRelease = false;
-            var isPreRelease = false;
-            var isEnabled = true;
-            if ( base_branch.startsWith('support') ) {
-              const oneMatch = deployments.support.find( ({ match }) => branch.match(new RegExp('support/'+match,'g')) );
-              tfWorkspace = oneMatch.env;
-              tfPrefix = oneMatch.terraformPrefix;
-            } else if ( base_branch.startsWith('release') ) {
-              isEnabled = (deployments.test['enabled'] == null ? true : (deployments.test['enabled'] === 'true'));
-              tfWorkspace = deployments.test.env;
-              tfPrefix = deployments.test.terraformPrefix;
-            } else if ( base_branch === 'develop' ) {
-              isEnabled = (deployments.develop['enabled'] == null ? true : (deployments.develop['enabled'] === 'true'));
-              tfWorkspace = deployments.develop.env;
-              tfPrefix = deployments.develop.terraformPrefix;
-            } else if ( base_branch === 'master' || base_branch === 'main' ) {
-              isRelease = true;
-              tfWorkspace = deployments.release.env;
-              tfPrefix = deployments.release.terraformPrefix;
-            } else {
-              core.setFailed('Branch not supported');
-            }            
-            
-            const outputV = { 
-              workspace: tfWorkspace, 
-              prefix: tfPrefix, 
-              isPreRelease: isPreRelease, 
-              isRelease: isRelease,
-              isEnabled: isEnabled
-            };
-            core.setOutput('workspace', tfWorkspace);
-            core.setOutput('prefix', tfPrefix);
-            core.setOutput('isRelease', isRelease);
-            core.setOutput('isPreRelease', isPreRelease);
-            core.setOutput('isEnabled', isEnabled);
-            
-            return outputV;
-
       - name: Terragrunt Validate All
         uses: gruntwork-io/terragrunt-action@v2
         id: validate
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         with:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
-          tg_command: "validate --terragrunt-non-interactive --terragrunt-source-update"
-          working_dir: ${{ env.workind_dir }}
+          tg_command: "validate --terragrunt-non-interactive"
+          tg_dir: ${{ env.workind_dir }}
           tg_comment: 1
 
       - name: Create Plan Directory
@@ -170,8 +122,8 @@ jobs:
         with:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
-          tg_command: "plan --terragrunt-non-interactive --terragrunt-source-update"
-          working_dir: ${{ env.workind_dir }}
+          tg_command: "plan --terragrunt-non-interactive"
+          tg_dir: ${{ env.workind_dir }}
           tg_comment: 1
 
       - uses: actions/upload-artifact@v3
@@ -198,8 +150,8 @@ jobs:
       - name: Update Terragrunt folders
         id: terragrunt_folders
         uses: actions/github-script@v6
-        github-token: ${{ secrets.BOT_TOKEN }}
         with:
+          github-token: ${{ secrets.BOT_TOKEN }}
           script: |
             // Traverse all directories looking for terragrunt.hcl files and elaborate a full hierarchical directory list for terragrunt
             // Example directory content structure:
@@ -234,34 +186,48 @@ jobs:
             const { createHash } = require('crypto');
             
             const root = process.env.GITHUB_WORKSPACE;
-            const terragruntFiles = execSync('find . -name terragrunt.hcl').toString().split('\n');
+            const terragruntFiles = execSync(`find ${root} -name terragrunt.hcl | grep -v .terragrunt-cache`).toString().split('\n');
+            // Strip the root prefix from all terragruntFiles.
+            terragruntFiles.forEach((file, index) => {
+              terragruntFiles[index] = file.replace(root, '');
+            });
             const terragruntFolders = terragruntFiles.map( file => path.dirname(file) );
-            const terragruntFoldersSet = new Set(terragruntFolders);
-            const terragruntFoldersList = Array.from(terraguntFoldersSet);
+            // Generate all intermediate folders for each terragruntFolders up to root, strip the root string on all outputs, 
+            // the resulting output must match the logic in referenced "Resulting list" comment.
+            const allFolders = terragruntFolders.reduce((acc, folder) => {
+              const folders = folder.split('/');
+              const folderList = folders.reduce((acc, folder, index) => {
+                const folderPath = folders.slice(0, index + 1).join('/');
+                return acc.concat(folderPath);
+              }, []);
+              return acc.concat(folderList);
+            }, []);
+            const terragruntFoldersSet = new Set(allFolders);
+            // Remove the element at index 0, which is an empty string.            
+            terragruntFoldersSet.delete('');
+            terragruntFoldersSet.delete('.');
+            const terragruntFoldersList = Array.from(terragruntFoldersSet).sort();
             
-            const output = {
-              folders: terragruntFoldersList
-            };
-            
-            console.log(JSON.stringify(output));
-            
-            return output;
+            console.log(JSON.stringify(terragruntFoldersList));
+            core.setOutput('folders', JSON.stringify(terragruntFoldersList));
+            return terragruntFoldersList;
 
       # Modify deploy YML wit yq command in order to insert the output from terragrunt_folders script
       # into the deploy.yml file on the yaml address: on.workflow_dispatch.inputs.working_directory.options
       - name: Modify deploy.yml with folderlist
-        use: mikefarah/yq@master
+        uses: mikefarah/yq@master
         with:
-          cmd: yq -y '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml > .github/workflows/deploy.yml
+          cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml
 
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
+        continue-on-error: true
         run: |
-          git config --global user.name "${{ secrets.BOT_USER }}"
-          git config --global user.email "${{ secrets.BOT_EMAIL }}"
+          git config --global user.name "${{ vars.BOT_USER }}"
+          git config --global user.email "${{ vars.BOT_EMAIL }}"
           git add .github/workflows/deploy.yml
           git commit -m "chore: Update deploy.yml with terragrunt folders"
-          git push
+          git push origin ${{ github.head_ref }}
 
   # Proceed with labeling if the procedure is candidate to be autoapproved
   label_autoapprove:

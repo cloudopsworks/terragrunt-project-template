@@ -5,12 +5,12 @@
 #
 # CI/CD configurations
 terraform:
-  parameters:
-    source: aws-ssm
-  aws-ssm:
-    region: us-east-1
-    paths:
-      init: /terraform/state/remote.tfbackend
+#  parameters:
+#    source: aws-ssm|s3|azure-kv
+#  aws-ssm:
+#    region: us-east-1
+#    paths:
+#      init: /terraform/state/remote.tfbackend
 #  s3:
 #    region: us-east-1
 #    bucketName: bucketname
@@ -45,23 +45,26 @@ config:
   requiredReviewers: 1
 
   reviewers:
-    - berahac
-    - finconecta-bot
-    - duilioizzi-finconecta
+    - admin
+    - cloudopsworks
+    - cloudopsworks-bot
 
   # Optional Only needed for permit owners to perform commits under protected branches.
   # Teams are specified as org/team-name
   owners:
-    - finconecta-team/dev-ops
-    - berahac
-    - duilioizzi-finconecta
+    - cloudopsworks/dev-ops
+    - admin
 
   # Optional configure the repository members
   contributors:
     admin:
-      - finconecta-team/dev-ops
+      - cloudopsworks/dev-ops
     triage: []
     pull: []
     push:
-      - finconecta-team/dev-ops
+      - cloudopsworks/dev-ops
     maintain: []
+
+cd:
+  # Indicate that the environment makes automatic merges and deploys
+  automatic: false

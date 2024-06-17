@@ -11,12 +11,65 @@ on:
         required: true
         default: '/'
         options:
-          - "/"
-
+          - /
+          - /environments
+          - /environments/dev
+          - /environments/dev/useast1
+          - /environments/dev/useast1/spoke-001
+          - /environments/dev/useast1/spoke-001/network
+          - /environments/dev/useast1/spoke-001/network/dns
+          - /environments/dev/useast1/spoke-001/network/vpc
+          - /environments/dev/useast1/spoke-001/network/vpc-tgw
+          - /environments/prod
+          - /environments/prod/useast1
+          - /environments/prod/useast1/spoke-001
+          - /environments/prod/useast1/spoke-001/network
+          - /environments/prod/useast1/spoke-001/network/dns
+          - /environments/prod/useast1/spoke-001/network/vpc
+          - /environments/prod/useast1/spoke-001/network/vpc-tgw
+          - /environments/uat
+          - /environments/uat/useast1
+          - /environments/uat/useast1/spoke-001
+          - /environments/uat/useast1/spoke-001/network
+          - /environments/uat/useast1/spoke-001/network/dns
+          - /environments/uat/useast1/spoke-001/network/vpc
+          - /environments/uat/useast1/spoke-001/network/vpc-tgw
+          - /global
+          - /global/accounts
+          - /global/accounts/fihogar-paynopain
+          - /global/accounts/fihogar-paynopain/org
+          - /global/accounts/fihogar-paynopain/org-iam
+          - /global/accounts/fihogar-portal
+          - /global/accounts/fihogar-portal/org
+          - /global/accounts/fihogar-portal/org-iam
+          - /global/accounts/fihogar-tailor
+          - /global/accounts/fihogar-tailor/org
+          - /global/accounts/fihogar-tailor/org-iam
+          - /global/accounts/forward-apps
+          - /global/accounts/forward-apps/org
+          - /global/accounts/forward-apps/org-iam
+          - /global/accounts/forward-dev
+          - /global/accounts/forward-dev/org
+          - /global/accounts/forward-dev/org-iam
+          - /global/accounts/forward-uat
+          - /global/accounts/forward-uat/org
+          - /global/accounts/forward-uat/org-iam
+          - /global/accounts/inm
+          - /global/accounts/inm/org
+          - /global/accounts/inm/org-iam
+          - /global/accounts/mastercard
+          - /global/accounts/mastercard/org
+          - /global/accounts/mastercard/org-iam
+          - /networking
+          - /networking/landing
+          - /networking/landing/useast1
+          - /networking/landing/useast1/hub-000
+          - /networking/landing/useast1/hub-000/dns
+          - /networking/landing/useast1/hub-000/vpc
+          - /networking/landing/useast1/hub-000/vpc-tgw
 concurrency:
   group: plan-deploy-${{ github.repository }}
   cancel-in-progress: false
-
 permissions:
   contents: write
   packages: write
@@ -24,11 +77,9 @@ permissions:
   pull-requests: write
   issues: write
   checks: write
-
 env:
   tofu_version: 1.7.1
   tg_version: 0.58.5
-
 jobs:
   prevalidate:
     if: ${{ startsWith(github.ref,'refs/heads/release/') || startsWith(github.ref,'refs/heads/develop') || startsWith(github.ref,'refs/heads/support/') || startsWith(github.ref,'refs/tags/v') }}
@@ -42,7 +93,6 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-
   deploy:
     needs:
       - prevalidate
@@ -56,105 +106,23 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
-
       # Get source of Configuration parameters (sensitive information)
       - name: Get Configuration source
         id: config_source
         uses: mikefarah/yq@master
         with:
           cmd: yq '.terraform.parameters.source' ./cloudopsworks-ci.yaml
-
       - name: Get the deployments configuration
         id: deploy_conf
         uses: mikefarah/yq@master
         with:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
-
-      # Set the appropriate workspace from what is configured from the deploy_conf step
-      # Result is stored as JSON with the format found on the cd.deployments section on cloudopsworks-ci.yaml
-      - name: Set the appropriate workspace
-        id: workspace
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const deployments = JSON.parse('${{ steps.deploy_conf.outputs.result }}');
-            const branch = '${{ github.ref_name }}';
-            
-            var tfWorkspace;
-            var tfPrefix;
-            var isRelease = false;
-            var isPreRelease = false;
-            var isEnabled = true;
-            if ( branch.startsWith('support') ) {
-              const oneMatch = deployments.support.find( ({ match }) => branch.match(new RegExp('support/'+match,'g')) );
-              tfWorkspace = oneMatch.env;
-              tfPrefix = oneMatch.terraformPrefix;
-            } else if ( branch.startsWith('release') ) {
-              isEnabled = (deployments.test['enabled'] == null ? true : (deployments.test['enabled'] === 'true'));
-              tfWorkspace = deployments.test.env;
-              tfPrefix = deployments.test.terraformPrefix;
-            } else if ( branch === 'develop' ) {
-              isEnabled = (deployments.develop['enabled'] == null ? true : (deployments.develop['enabled'] === 'true'));
-              tfWorkspace = deployments.develop.env;
-              tfPrefix = deployments.develop.terraformPrefix;
-            } else {
-              // This semver structure is obtained as per specification https://semver.org/ & https://regex101.com/r/vkijKf/1/
-              semver = branch.match(/^v(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)(?:-(?<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/);
-              if ( semver != null ) {
-                const pre = semver['groups']['prerelease'];
-                const buildmeta = semver['groups']['buildmetadata'];
-                // buildmeta format is deploy-XXXX.yyy.zzz
-                // the metasuffix should be the deploy- prefix
-                if ( pre != null && buildmeta != null) {
-                  const metasuffix = buildmeta.match(/deploy-(?<data>.*)/);
-                  isEnabled = (deployments.prerelease['enabled'] == null ? true : (deployments.prerelease['enabled'] === 'true'));
-                  isPreRelease = true;
-                  tfWorkspace = deployments.prerelease.targets[metasuffix.groups.data].env;
-                  tfPrefix = deployments.prerelease.targets[metasuffix.groups.data].terraformPrefix;
-                } else if ( pre != null ) {
-                  isEnabled = (deployments.prerelease['enabled'] == null ? true : (deployments.prerelease['enabled'] === 'true'));
-                  // Regular expression to match following semver pattern: v1.0.2-alpha.10-uoiretu834u
-                  isPreRelease = true;
-                  tfWorkspace = deployments.prerelease.env;
-                  tfPrefix = deployments.prerelease.terraformPrefix;                
-                } else if ( buildmeta != null ) {
-                  const metasuffix = buildmeta.match(/deploy-(?<data>.*)/);
-                  isRelease = true;
-                  tfWorkspace = deployments.release.targets[metasuffix.groups.data].env;
-                  tfPrefix = deployments.release.targets[metasuffix.groups.data].terraformPrefix;                  
-                } else {
-                  isRelease = true;
-                  tfWorkspace = deployments.release.env;
-                  tfPrefix = deployments.release.terraformPrefix;
-                }
-              } else {
-                core.setFailed('Branch not supported');
-              }
-            }            
-            
-            const outputV = { 
-              workspace: tfWorkspace, 
-              prefix: tfPrefix, 
-              isPreRelease: isPreRelease, 
-              isRelease: isRelease,
-              isEnabled: isEnabled
-            }; 
-            core.setOutput('workspace', tfWorkspace);
-            core.setOutput('prefix', tfPrefix);
-            core.setOutput('isRelease', isRelease);
-            core.setOutput('isPreRelease', isPreRelease);
-            core.setOutput('isEnabled', isEnabled);
-            
-            return outputV;
-
       - name: Create Plan Directory
         run: mkdir -p ./.plans
-
       - name: Terragrunt Plan ${{ inputs.working_directory }}
         uses: gruntwork-io/terragrunt-action@v2
         id: plan
@@ -169,8 +137,7 @@ jobs:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
           tg_command: "plan --terragrunt-non-interactive --terragrunt-source-update -out ./.plans/plan.out"
-          working_dir: ${{ inputs.working_directory }}
-
+          tg_dir: ${{ inputs.working_directory }}
       - name: Terragrunt Apply ${{ inputs.working_directory }}
         uses: gruntwork-io/terragrunt-action@v2
         id: plan
@@ -185,35 +152,27 @@ jobs:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
           tg_command: "apply --terragrunt-non-interactive ./.plans/plan.out"
-          working_dir: ${{ inputs.working_directory }}
-
-
+          tg_dir: ${{ inputs.working_directory }}
       # Create a VERSION file to use through the build
       - name: Set Version File
-        if: ${{ ( steps.workspace.outputs.isRelease == 'true' || steps.workspace.outputs.isPreRelease == 'true' ) && steps.workspace.outputs.isEnabled == 'true' }}
         env:
           NEXT_VERSION: "${{ github.ref_name }}"
         run: |
           echo -n "$NEXT_VERSION" > VERSION
-
       # Output Changelog from previous tag
       - name: Changelog
-        if: ${{ ( steps.workspace.outputs.isRelease == 'true' || steps.workspace.outputs.isPreRelease == 'true' ) && steps.workspace.outputs.isEnabled == 'true'  }}
         uses: heinrichreimer/action-github-changelog-generator@v2.3
         with:
           token: ${{ secrets.BOT_TOKEN }}
           output: CHANGELOG.md
-
       # Create GitHub Release
       - name: GitHub Release
-        if: ${{ ( steps.workspace.outputs.isRelease == 'true' || steps.workspace.outputs.isPreRelease == 'true' ) && steps.workspace.outputs.isEnabled == 'true'  }}
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.BOT_TOKEN }}
           name: "Release ${{ github.ref_name }}"
           body_path: CHANGELOG.md
           prerelease: ${{ steps.workspace.outputs.isPreRelease }}
-
 #      # Push the changes to Git TAG before deploying anything
 #      - name: Release Version
 #        if: github.ref == 'master'
