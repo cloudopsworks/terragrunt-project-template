@@ -17,62 +17,7 @@ on:
         required: true
         default: '/'
         options:
-          - /
-          - /environments
-          - /environments/dev
-          - /environments/dev/useast1
-          - /environments/dev/useast1/spoke-001
-          - /environments/dev/useast1/spoke-001/network
-          - /environments/dev/useast1/spoke-001/network/dns
-          - /environments/dev/useast1/spoke-001/network/vpc
-          - /environments/dev/useast1/spoke-001/network/vpc-tgw
-          - /environments/prod
-          - /environments/prod/useast1
-          - /environments/prod/useast1/spoke-001
-          - /environments/prod/useast1/spoke-001/network
-          - /environments/prod/useast1/spoke-001/network/dns
-          - /environments/prod/useast1/spoke-001/network/vpc
-          - /environments/prod/useast1/spoke-001/network/vpc-tgw
-          - /environments/uat
-          - /environments/uat/useast1
-          - /environments/uat/useast1/spoke-001
-          - /environments/uat/useast1/spoke-001/network
-          - /environments/uat/useast1/spoke-001/network/dns
-          - /environments/uat/useast1/spoke-001/network/vpc
-          - /environments/uat/useast1/spoke-001/network/vpc-tgw
-          - /global
-          - /global/accounts
-          - /global/accounts/fihogar-paynopain
-          - /global/accounts/fihogar-paynopain/org
-          - /global/accounts/fihogar-paynopain/org-iam
-          - /global/accounts/fihogar-portal
-          - /global/accounts/fihogar-portal/org
-          - /global/accounts/fihogar-portal/org-iam
-          - /global/accounts/fihogar-tailor
-          - /global/accounts/fihogar-tailor/org
-          - /global/accounts/fihogar-tailor/org-iam
-          - /global/accounts/forward-apps
-          - /global/accounts/forward-apps/org
-          - /global/accounts/forward-apps/org-iam
-          - /global/accounts/forward-dev
-          - /global/accounts/forward-dev/org
-          - /global/accounts/forward-dev/org-iam
-          - /global/accounts/forward-uat
-          - /global/accounts/forward-uat/org
-          - /global/accounts/forward-uat/org-iam
-          - /global/accounts/inm
-          - /global/accounts/inm/org
-          - /global/accounts/inm/org-iam
-          - /global/accounts/mastercard
-          - /global/accounts/mastercard/org
-          - /global/accounts/mastercard/org-iam
-          - /networking
-          - /networking/landing
-          - /networking/landing/useast1
-          - /networking/landing/useast1/hub-000
-          - /networking/landing/useast1/hub-000/dns
-          - /networking/landing/useast1/hub-000/vpc
-          - /networking/landing/useast1/hub-000/vpc-tgw
+          - .
 concurrency:
   group: plan-deploy-${{ github.repository }}
   cancel-in-progress: false
