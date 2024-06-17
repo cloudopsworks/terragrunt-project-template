@@ -1,0 +1,67 @@
+##
+# (c) 2023 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+# CI/CD configurations
+terraform:
+  parameters:
+    source: aws-ssm
+  aws-ssm:
+    region: us-east-1
+    paths:
+      init: /terraform/state/remote.tfbackend
+#  s3:
+#    region: us-east-1
+#    bucketName: bucketname
+#    paths:
+#      init: terraform_remote_state_config
+#  azure-kv:
+#    resourceGroup: rg
+#    keyVaultName: kv
+#    paths:
+#      init: terraform_remote_state_config
+
+# Repo & CD Configurations
+# Some of them previously managed in OWNERS file
+# now are managed from here
+config:
+  # Configure repository to enable branch protection
+  # https://docs.github.com/en/rest/reference/repos#update-branch-protection
+  branchProtection: true
+  # Configure the repository to use Git Flow and or support Branches enablement
+  gitFlow:
+    enabled: true
+    supportBranches: false
+  # Protected sources rules (future implementation)
+  protectedSources:
+    - "*.tf"
+    - "*.tfvars"
+    - OWNERS
+    - Makefile
+    - .github
+
+  # Optional only needed if not automatic or protection is true
+  requiredReviewers: 1
+
+  reviewers:
+    - berahac
+    - finconecta-bot
+    - duilioizzi-finconecta
+
+  # Optional Only needed for permit owners to perform commits under protected branches.
+  # Teams are specified as org/team-name
+  owners:
+    - finconecta-team/dev-ops
+    - berahac
+    - duilioizzi-finconecta
+
+  # Optional configure the repository members
+  contributors:
+    admin:
+      - finconecta-team/dev-ops
+    triage: []
+    pull: []
+    push:
+      - finconecta-team/dev-ops
+    maintain: []

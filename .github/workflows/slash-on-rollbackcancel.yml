@@ -1,0 +1,59 @@
+##
+# (c) 2021 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+name: Slash command on Cancel/Rollback
+on:
+  repository_dispatch:
+    types:
+      - cancel-command
+      - rollback-command
+      - reject-command
+      - close-command
+
+concurrency:
+  group: cancel-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: write
+  packages: read
+  statuses: write
+  pull-requests: write
+
+jobs:
+  close-pull:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Closes the Pull Request
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          script: |
+            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
+            const output = `##Cancel was requested
+            Cancel/Rollback requested, Pull Request will close now!
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            const {data: thePull} = await github.rest.pulls.get({
+              pull_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+
+            github.rest.issues.createComment({
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+            github.rest.pulls.update({
+              pull_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+            });

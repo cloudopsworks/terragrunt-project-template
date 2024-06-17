@@ -1,0 +1,9 @@
+organization:
+  id: r-1nvd
+  account_id: 444441340996
+  terraform:
+    group_name: terraform-access
+
+default:
+  region: us-east-1
+  sts_role_arn: arn:aws:iam::444441340996:role/TerraformAccessRole
