@@ -1,0 +1,7 @@
+{
+  "maintainer-id": "<MAINTAINER_NAME>",
+  "maintainer-email": "<MAINTAINER_EMAIL>,
+  "iac-project-name": "<GIT_PROJECT_NAME>",
+  "zone-ownership-by": "<owned|shared|OWNER_NAME>",
+  "zone-managed-by": "<owned|shared|OWNER_NAME>"
+}

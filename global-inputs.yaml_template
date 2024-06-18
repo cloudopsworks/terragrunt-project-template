@@ -1,0 +1,10 @@
+#Global inputs for all terraform modules
+sample_vars:
+  var1: value1
+  list1:
+    - item1
+    - item2
+
+default:
+  region: <AWS_REGION>
+  sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/TerraformAccessRole

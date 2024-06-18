@@ -1,0 +1,322 @@
+##
+# (c) 2021 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+name: Terragrunt Project Plan on Pull request
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+      - support/**
+      - release/**
+    paths-ignore:
+      #      - .github/workflows/**
+      - modules/**
+
+concurrency:
+  group: plan-deploy-${{ github.repository }}
+  cancel-in-progress: false
+
+
+permissions:
+  contents: read
+  packages: write
+  statuses: write
+  pull-requests: write
+  issues: write
+  checks: write
+
+env:
+  tofu_version: 1.7.1
+  tg_version: 0.58.5
+  workind_dir: .
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      auto_approve: ${{ steps.check_automatic.outputs.result }}
+    steps:
+      - uses: actions/labeler@v4
+        with:
+          repo-token: ${{ secrets.BOT_TOKEN }}
+
+      # Get the owner repo
+      - name: Get owner
+        id: getowner
+        run: |
+          repo_owner=`echo "$GITHUB_REPOSITORY" | cut -f 1 -d "/"`
+          repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
+          echo "owner=$repo_owner" >> $GITHUB_OUTPUT
+          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Check if automatic
+        id: check_automatic
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.cd.automatic' ./cloudopsworks-ci.yaml | tr '[:upper:]' '[:lower:]'
+
+      - name: Terragrunt Format Check
+        uses: gruntwork-io/terragrunt-action@v2
+        id: fmt
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+        with:
+          tofu_version: ${{ env.tofu_version }}
+          tg_version: ${{ env.tg_version }}
+          tg_command: "hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff"
+          tg_dir: ${{ env.workind_dir }}
+          tg_comment: 1
+
+      # Get source of Configuration parameters (sensitive information)
+      - name: Get Configuration source
+        id: config_source
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.terraform.parameters.source' ./cloudopsworks-ci.yaml
+
+      - name: Get the deployments configuration
+        id: deploy_conf
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
+
+      - name: Terragrunt Validate All
+        uses: gruntwork-io/terragrunt-action@v2
+        id: validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        with:
+          tofu_version: ${{ env.tofu_version }}
+          tg_version: ${{ env.tg_version }}
+          tg_command: "validate --terragrunt-non-interactive"
+          tg_dir: ${{ env.workind_dir }}
+          tg_comment: 1
+
+      - name: Create Plan Directory
+        run: mkdir -p ./.plans
+
+      - name: Hard Fail Validation Not Success
+        run: |
+          result_fmt="${{ steps.fmt.outputs.tg_action_exit_code }}"
+          result_validate="${{ steps.validate.outputs.tg_action_exit_code }}"
+          
+          if [[ "$result_fmt" == "0" && "$result_validate" == "0" ]] ; then
+            echo "All OK... nothing todo"
+          else
+            echo "FMT=$result_fmt\nVALIDATE=$result_validate\n\nIt's NOT OK, will hard fail."
+            exit 1
+          fi
+
+      - name: Update Terragrunt folders
+        id: terragrunt_folders
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          script: |
+            // Traverse all directories looking for terragrunt.hcl files and elaborate a full hierarchical directory list for terragrunt
+            // Example directory content structure:
+            // - terragrunt.hcl
+            // - networking/landing/useast1/hub-000/vpc/terragrunt.hcl
+            // - networking/landing/useast1/hub-000/dns/terragrunt.hcl
+            // - environments/dev/useast1/spoke-001/network/dns/terragrunt.hcl
+            // - environments/dev/useast1/spoke-001/network/vpc/terragrunt.hcl
+            // - environments/dev/useast1/spoke-001/network/vpc-tgw/terragrunt.hcl
+            // Resulting list:
+            // - /
+            // - environments
+            // - environments/dev
+            // - environments/dev/useast1
+            // - environments/dev/useast1/spoke-001
+            // - environments/dev/useast1/spoke-001/network
+            // - environments/dev/useast1/spoke-001/network/dns
+            // - environments/dev/useast1/spoke-001/network/vpc
+            // - environments/dev/useast1/spoke-001/network/vpc-tgw
+            // - networking
+            // - networking/landing
+            // - networking/landing/useast1
+            // - networking/landing/useast1/hub-000
+            // - networking/landing/useast1/hub-000/dns
+            // - networking/landing/useast1/hub-000/vpc            
+            //
+            // Return the list into action result as JSON
+            
+            const fs = require('fs');
+            const path = require('path');
+            const { execSync } = require('child_process');
+            const { createHash } = require('crypto');
+            
+            const root = process.env.GITHUB_WORKSPACE;
+            const terragruntFiles = execSync(`find ${root} -name terragrunt.hcl | grep -v .terragrunt-cache`).toString().split('\n');
+            // Strip the root prefix from all terragruntFiles.
+            terragruntFiles.forEach((file, index) => {
+              terragruntFiles[index] = file.replace(root + '/', '');
+            });
+            const terragruntFolders = terragruntFiles.map( file => path.dirname(file) );
+            // Generate all intermediate folders for each terragruntFolders up to root, strip the root string on all outputs, 
+            // the resulting output must match the logic in referenced "Resulting list" comment.
+            const allFolders = terragruntFolders.reduce((acc, folder) => {
+              const folders = folder.split('/');
+              const folderList = folders.reduce((acc, folder, index) => {
+                const folderPath = folders.slice(0, index + 1).join('/');
+                return acc.concat(folderPath);
+              }, []);
+              return acc.concat(folderList);
+            }, []);
+            const terragruntFoldersSet = new Set(allFolders);
+            // Remove the element at index 0, which is an empty string.            
+            terragruntFoldersSet.delete('');
+            //terragruntFoldersSet.delete('.');
+            const terragruntFoldersList = Array.from(terragruntFoldersSet).sort();
+            
+            console.log(JSON.stringify(terragruntFoldersList));
+            core.setOutput('folders', JSON.stringify(terragruntFoldersList));
+            return terragruntFoldersList;
+
+      # Modify deploy YML wit yq command in order to insert the output from terragrunt_folders script
+      # into the deploy.yml file on the yaml address: on.workflow_dispatch.inputs.working_directory.options
+      - name: Modify deploy.yml with folderlist
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml
+
+      # Push the change to the repository using plain git commands
+      - name: Push Deploy Workflow
+        continue-on-error: true
+        run: |
+          git config --global user.name "${{ vars.BOT_USER }}"
+          git config --global user.email "${{ vars.BOT_EMAIL }}"
+          git add .github/workflows/deploy.yml
+          git commit -m "chore: Update deploy.yml with terragrunt folders"
+          git push origin ${{ github.head_ref }}
+
+  # Proceed with labeling if the procedure is candidate to be autoapproved
+  label_autoapprove:
+    needs:
+      - plan
+    runs-on: ubuntu-latest
+    if: ${{ github.base_ref != 'master' && github.base_ref != 'main' && ( ! startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.BOT_TOKEN}}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['approved', 'automatic-environment']
+            })
+
+  # Job to add the required reviewers and approvals to the PR
+  add_reviewers_and_approvals:
+    needs:
+      - plan
+    runs-on: ubuntu-latest
+    if: ${{ ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Read required Reviewers from config file
+        id: reviewers_count
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.config.requiredReviewers' ./cloudopsworks-ci.yaml
+
+      - name: Read all reviewers from config file
+        id: reviewers_json
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -o=json -I=0 '.config.reviewers' ./cloudopsworks-ci.yaml
+
+      - name: Add review and approval labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.BOT_TOKEN}}
+          script: |
+            const reviewers_json=JSON.parse('${{ steps.reviewers_json.outputs.result }}');
+            const reviewers_count=${{ steps.reviewers_count.outputs.result }};
+            const labels = ['approval-required','review-required'];
+            const actor = '${{ github.event.pull_request.user.login }}'
+
+            var reviewers = []
+            for ( const rev of reviewers_json ) {
+              if ( actor != rev ) {
+                reviewers.push(rev)
+              }
+            }
+
+            github.rest.pulls.requestReviewers({
+              pull_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              reviewers: reviewers
+            });
+
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels
+            });
+
+  # Place a do-not-merge label untl all the conditions are met
+  #   the conditions are:
+  #     labels are: blue-green/new or blue-green/complete
+  do_not_merge_label:
+    needs:
+      - plan
+    runs-on: ubuntu-latest
+    if: ${{ ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
+    outputs:
+      is_mergeable: ${{ steps.check.outputs.result }}
+    steps:
+      - name: Set DO-NOT-MERGE if not in last step
+        id: check
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.BOT_TOKEN}}
+          result-encoding: string
+          script: |
+            const {data: pullLabels} = await github.rest.issues.listLabelsOnIssue({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            const labels = pullLabels.map(label => label.name);
+
+            var is_mergeable = false;
+
+            for (const aLabel of labels) {
+              if ( aLabel == 'blue-green/new' || aLabel == 'approved' ) {
+                is_mergeable = true;
+              }
+            }
+
+            if ( ! is_mergeable ) {
+              github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: [ 'do-not-merge' ]
+              });
+            }
+
+            return ( is_mergeable ? 'true' : 'false' );
+

@@ -1,0 +1,33 @@
+##
+# (c) 2021 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+name: Environment Auto Merge on Pull request
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - labeled
+      - unlabeled
+      - edited
+
+permissions:
+  contents: write
+  packages: read
+  statuses: write
+  pull-requests: write
+  issues: write
+  checks: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: pascalgn/automerge-action@v0.15.5
+        env:
+          GITHUB_TOKEN: "${{ secrets.BOT_TOKEN }}"
+          MERGE_LABELS: "approved,!do-not-merge"
+          UPDATE_LABELS: "approved"
+          #LOG: "TRACE"
