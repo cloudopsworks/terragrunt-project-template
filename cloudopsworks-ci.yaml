@@ -68,3 +68,13 @@ config:
 cd:
   # Indicate that the environment makes automatic merges and deploys
   automatic: false
+
+  deployments:
+    develop:
+      env: dev
+    release:
+      env: production
+    test:
+      env: test
+    prerelease:
+      env: uat

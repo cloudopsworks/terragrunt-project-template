@@ -11,11 +11,18 @@ on:
         description: 'The action to perfotm: plan/apply/destroy'
         required: true
         default: 'apply'
+      environment:
+        type: choice
+        description: 'The environment to deploy'
+        required: true
+        default: 'dev'
+        options:
+          - dev
       working_directory:
         type: choice
         description: 'The working directory to use'
         required: true
-        default: '/'
+        default: '.'
         options:
           - .
 concurrency:
@@ -44,7 +51,7 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-  deploy:
+  plan:
     needs:
       - prevalidate
     runs-on: ubuntu-latest
@@ -72,9 +79,7 @@ jobs:
         uses: mikefarah/yq@master
         with:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
-      - name: Create Plan Directory
-        run: mkdir -p ./.plans
-      - name: Terragrunt ${{ inputs.action }} ${{ inputs.working_directory }}
+      - name: Terragrunt plan ${{ inputs.working_directory }}
         uses: gruntwork-io/terragrunt-action@v2
         id: plan
         continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
@@ -87,7 +92,62 @@ jobs:
         with:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}
-          tg_command: "run-all ${{ inputs.action }} --terragrunt-non-interactive"
+          tg_command: "run-all plan --terragrunt-non-interactive"
+          tg_dir: ${{ inputs.working_directory }}
+      - name: Search Plans
+        id: search_plans
+        run: |
+          TFOUT="$(find . \( -not \( -path '*/.terragrunt-cache' -prune \) \) \( -name tfplan.out -o -name tfplan.json \))"
+          
+          echo "$TFOUT"
+          
+          echo "tfplans<<EOF" >> $GITHUB_OUTPUT
+          echo "$TFOUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Upload Plan files
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-release-plan
+          path: |
+            .placeholder
+            ${{ steps.search_plans.outputs.tfplans }}
+            ${{ steps.search_plans.outputs.tfplans_json }}
+
+  deploy:
+    needs:
+      - prevalidate
+      - plan
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: environment-release-plan
+          path: .
+          merge-multiple: true
+      - name: Terraform Plan prettifier
+        uses: kishaningithub/setup-tf-summarize@v2
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          tf-summarize-version: v0.3.10
+      - name: Terragrunt ${{ inputs.action }} ${{ inputs.working_directory }}
+        uses: gruntwork-io/terragrunt-action@v2
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        with:
+          tofu_version: ${{ env.tofu_version }}
+          tg_version: ${{ env.tg_version }}
+          tg_command: "run-all ${{ inputs.action }} ${{ inputs.action == 'apply' && 'tfplan.out' || '' }} --terragrunt-non-interactive"
           tg_dir: ${{ inputs.working_directory }}
       # Create a VERSION file to use through the build
       - name: Set Version File

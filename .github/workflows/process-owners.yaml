@@ -463,6 +463,7 @@ jobs:
             await github.graphql(protection_rule, vars);
 
       - name: Advanced Deployment Environments Creation
+        id: env_setup
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
@@ -575,3 +576,29 @@ jobs:
                 await github.graphql(env_query, env_vars);
               }
             }
+            
+            const env_list = []
+            for ( const index in deployments_list ) { 
+              const deploy = deployments_list[index];
+              const env_key = deploy.key;
+              env_list.push(env_key)
+            }
+            
+            core.setOutput('env_list', JSON.stringify(env_list));
+
+      # Modify deploy YML wit yq command in order to insert the output from terragrunt_folders script
+      # into the deploy.yml file on the yaml address: on.workflow_dispatch.inputs.working_directory.options
+      - name: Modify deploy.yml with Environment List
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.on.workflow_dispatch.inputs.environment.options = ${{ steps.env_setup.outputs.env_list }}' .github/workflows/deploy.yml
+
+      # Push the change to the repository using plain git commands
+      - name: Push Deploy Workflow
+        continue-on-error: true
+        run: |
+          git config --global user.name "${{ vars.BOT_USER }}"
+          git config --global user.email "${{ vars.BOT_EMAIL }}"
+          git add .github/workflows/deploy.yml
+          git commit -m "chore: Update deploy.yml with environment list"
+          git push origin ${{ github.head_ref }}

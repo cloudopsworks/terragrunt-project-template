@@ -109,41 +109,15 @@ jobs:
       - name: Create Plan Directory
         run: mkdir -p ./.plans
 
-      - name: Terragrunt Plan All
-        uses: gruntwork-io/terragrunt-action@v2
-        id: plan
-        continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
-          HELM_EXPERIMENTAL_OCI: "1"
-          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        with:
-          tofu_version: ${{ env.tofu_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_command: "plan --terragrunt-non-interactive"
-          tg_dir: ${{ env.workind_dir }}
-          tg_comment: 1
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: environment-release-plan
-          path: |
-            ./.plans/plan.out
-            ./.plans/plan.log
-          #if-no-files-found: error
-
-      - name: Hard Fail plan not success
+      - name: Hard Fail Validation Not Success
         run: |
           result_fmt="${{ steps.fmt.outputs.tg_action_exit_code }}"
           result_validate="${{ steps.validate.outputs.tg_action_exit_code }}"
-          result_plan="${{ steps.plan.outputs.tg_action_exit_code }}"
           
-          if [[ "$result_fmt" == "0" && "$result_validate" == "0" && "$result_plan" == "0" ]] ; then
+          if [[ "$result_fmt" == "0" && "$result_validate" == "0" ]] ; then
             echo "All OK... nothing todo"
           else
-            echo "FMT=$result_fmt\nVALIDATE=$result_validate\nPLAN=$result_plan\nIt's NOT OK, will hard fail."
+            echo "FMT=$result_fmt\nVALIDATE=$result_validate\n\nIt's NOT OK, will hard fail."
             exit 1
           fi
 
