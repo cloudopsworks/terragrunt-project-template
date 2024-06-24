@@ -5,6 +5,10 @@ sample_vars:
     - item1
     - item2
 
+#Optionals
+account:
+  id: <ACCOUNT_ID>
+
 default:
   region: <AWS_REGION>
   sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/TerraformAccessRole
