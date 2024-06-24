@@ -41,7 +41,7 @@ remote_state {
     encrypt              = true
     kms_key_id           = local.state_conf.s3.kms_key_id
     dynamodb_table       = local.state_conf.s3.dynamodb_table
-    key                  = "zone/${path_relative_to_include()}/terraform.tfstate"
+    key                  = "${basename(get_repo_root())}/${path_relative_to_include()}/terraform.tfstate"
   }
 }
 
