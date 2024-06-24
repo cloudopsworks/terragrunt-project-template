@@ -1,0 +1,7 @@
+# Module configuration
+org:
+  name: "SampleOrg"
+  fintech_name: "SampleName"
+  environment_type: "Development"
+  environment_name: "SampleEnv"
+  email: "sample-account@cloudops.works"

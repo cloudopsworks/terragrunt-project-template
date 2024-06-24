@@ -1,0 +1,43 @@
+# Module configuration
+vpc:
+  cidr_block: "10.1.0.0/16"
+  availability_zones:
+    - "us-east-1a"
+    - "us-east-1b"
+    - "us-east-1c"
+    - "us-east-1d"
+  subnet_cidr_blocks:
+    public:
+      - "10.1.1.0/26"
+      - "10.1.1.64/26"
+      - "10.1.1.128/26"
+      - "10.1.1.192/26"
+    private:
+      - "10.1.8.0/21"
+      - "10.1.16.0/21"
+      - "10.1.24.0/21"
+      - "10.1.32.0/21"
+    database:
+      - "10.1.128.0/21"
+      - "10.1.136.0/21"
+      - "10.1.144.0/21"
+      - "10.1.152.0/21"
+  dhcp_option:
+    dns:
+      - "127.0.0.1"
+      - "10.1.1.2"
+  internal_allow_cidrs:
+    - "10.0.0.0/8"
+vpn_accesses:
+  - "172.94.117.93/32"
+  - "207.246.67.234/32"
+bastion:
+  create: true
+  vm_size: "t3.small"
+  disk_size: 60
+endpoint_services: []
+#  - name: ssm
+#  - name: ssmmessages
+#  - name: dynamodb
+#    type: Gateway
+#    policy: true

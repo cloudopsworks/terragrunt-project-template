@@ -1,0 +1,23 @@
+# Module configuration
+enabled: true
+enable_auto_accept: true
+ram:
+  allow_external_principals: true
+  principals:
+    - "905418487951"
+    - "891377094216"
+    - "926233322939"
+    - "887523981513"
+    - "725225104718"
+zones:
+  private.4wrd.tech:
+    domain_name: "4wrd.tech"
+    comment: "Forward internal DNS zone"
+    private: true
+    tags:
+      Name: "private.4wrd.tech"
+## WARNING! Below associations are manually added after the module is created and the zones are created on environment modules
+association_zone_ids:
+  - "Z0981522D9D4ORSV9II2"
+  - "Z05768203EJWQ9V9FI930"
+

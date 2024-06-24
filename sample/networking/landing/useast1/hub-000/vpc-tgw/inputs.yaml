@@ -1,0 +1,31 @@
+# Module configuration
+enable_auto_accept: true
+ram:
+  allow_external_principals: true
+  principals:
+    - "905418487951"
+    - "891377094216"
+    - "926233322939"
+    - "887523981513"
+    - "725225104718"
+destination_cidr: "10.0.0.0/8"
+routes:
+  - destination_cidr_block: "10.1.0.0/16"
+  - destination_cidr_block: "0.0.0.0/0"
+  - destination_cidr_block: "100.0.0.0/16"
+    blackhole: true
+shared: null
+vpc_attachments: {}
+#  finconecta-dev-spoke001:
+#    vpc_id: vpc-06862f9df2c0f4401
+#    subnet_ids:
+#      - "subnet-07f31b06846a62085"
+#      - "subnet-0a97aa35adfcbe4cc"
+#      - "subnet-00a8e1d014800e7ef"
+#    tgw_destination_cidr: "10.8.0.0/8s"
+#    transit_gateway_default_route_table_association: false
+#    transit_gateway_default_route_table_propagation: false
+#    tgw_routes:
+#      - destination_cidr_block: "10.8.0.0/16"
+#      - destination_cidr_block: "100.0.0.0/16"
+#        blackhole: true
