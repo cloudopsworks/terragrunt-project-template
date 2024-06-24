@@ -1,11 +1,11 @@
 # on Plan generate plan files in each module
 terraform {
   extra_arguments "plan_file" {
-    commands = ["plan"]
+    commands  = ["plan"]
     arguments = ["-out=${get_terragrunt_dir()}/tfplan.out"]
   }
   extra_arguments "plan_file" {
-    commands = ["apply"]
+    commands  = ["apply"]
     arguments = ["${get_terragrunt_dir()}/tfplan.out"]
   }
 }
