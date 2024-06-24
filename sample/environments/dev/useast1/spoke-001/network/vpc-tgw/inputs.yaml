@@ -1,0 +1,15 @@
+# Module configuration
+enable_auto_accept: true
+ram:
+  allow_external_principals: true
+  principals: []
+#    - "905418487951"
+#    - "891377094216"
+#    - "926233322939"
+destination_cidr: "0.0.0.0/0"
+routes:
+  - destination_cidr_block: "10.8.0.0/8"
+  - destination_cidr_block: "100.0.0.0/16"
+    blackhole: true
+shared: null
+vpc_attachments: {}

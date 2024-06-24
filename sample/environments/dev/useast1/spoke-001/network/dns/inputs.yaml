@@ -1,0 +1,14 @@
+# Module configuration
+enable_auto_accept: true
+ram:
+  allow_external_principals: true
+  principals: []
+zones:
+  dev.4wrd.tech:
+    domain_name: "dev.4wrd.tech"
+    comment: "Development Forward internal DNS zone"
+    private: true
+    tags:
+      Name: "dev.4wrd.tech"
+
+

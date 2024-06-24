@@ -1,8 +1,12 @@
 # on Plan generate plan files in each module
 terraform {
   extra_arguments "plan_file" {
-    commands = ["plan"]
+    commands  = ["plan"]
     arguments = ["-out=${get_terragrunt_dir()}/tfplan.out"]
+  }
+  extra_arguments "plan_file" {
+    commands  = ["apply"]
+    arguments = ["${get_terragrunt_dir()}/tfplan.out"]
   }
 }
 # load local variables from state_conf.yaml
@@ -20,7 +24,7 @@ generate "provider" {
 provider "aws" {
   region = "${local.global_vars.default.region}"
   assume_role {
-    #role_arn     = "${local.global_vars.default.sts_role_arn}"
+    role_arn     = "${local.global_vars.default.sts_role_arn}"
     session_name = "terragrunt"
   }
 }
@@ -41,7 +45,7 @@ remote_state {
     encrypt              = true
     kms_key_id           = local.state_conf.s3.kms_key_id
     dynamodb_table       = local.state_conf.s3.dynamodb_table
-    key                  = "zone/${path_relative_to_include()}/terraform.tfstate"
+    key                  = "${basename(get_repo_root())}/${path_relative_to_include()}/terraform.tfstate"
   }
 }
 

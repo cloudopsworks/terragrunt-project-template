@@ -98,9 +98,7 @@ jobs:
         id: search_plans
         run: |
           TFOUT="$(find . \( -not \( -path '*/.terragrunt-cache' -prune \) \) \( -name tfplan.out -o -name tfplan.json \))"
-          
-          echo "$TFOUT"
-          
+          echo "$TFOUT"          
           echo "tfplans<<EOF" >> $GITHUB_OUTPUT
           echo "$TFOUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -112,7 +110,6 @@ jobs:
             .placeholder
             ${{ steps.search_plans.outputs.tfplans }}
             ${{ steps.search_plans.outputs.tfplans_json }}
-
   deploy:
     needs:
       - prevalidate

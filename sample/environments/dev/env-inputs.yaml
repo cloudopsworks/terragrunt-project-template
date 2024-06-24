@@ -1,0 +1,6 @@
+#
+org:
+  organization_name: "Finconecta"
+  organization_unit: "Forward"
+  environment_type: "Spoke"
+  environment_name: "Dev"
