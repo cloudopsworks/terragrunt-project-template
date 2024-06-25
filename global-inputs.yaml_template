@@ -1,4 +1,6 @@
 #Global inputs for all terraform modules
+
+#Sample VARS
 sample_vars:
   var1: value1
   list1:
@@ -9,6 +11,7 @@ sample_vars:
 account:
   id: <ACCOUNT_ID>
 
+#AWS IAM ROLE required variables for running terraform
 default:
   region: <AWS_REGION>
   sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/TerraformAccessRole

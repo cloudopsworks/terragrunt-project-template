@@ -37,7 +37,7 @@ permissions:
   checks: write
 env:
   tofu_version: 1.7.1
-  tg_version: 0.58.5
+  tg_version: 0.59.5
 jobs:
   prevalidate:
     #if: ${{ startsWith(github.ref,'refs/heads/release/') || startsWith(github.ref,'refs/heads/develop') || startsWith(github.ref,'refs/heads/support/') || startsWith(github.ref,'refs/tags/v') }}
@@ -79,37 +79,39 @@ jobs:
         uses: mikefarah/yq@master
         with:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
+      - name: Setup OpenTofu
+        id: setup_opentofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.tofu_version }}
+          tofu_wrapper: false
+      - name: Setup Terragrunt v${{ env.tg_version }}
+        run: |
+          sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.tg_version }}/terragrunt_linux_amd64"
+          sudo chmod +x /bin/terragrunt
+          terragrunt -v
       - name: Terragrunt plan ${{ inputs.working_directory }}
-        uses: gruntwork-io/terragrunt-action@v2
         id: plan
-        continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
+        #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        with:
-          tofu_version: ${{ env.tofu_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_command: "run-all plan --terragrunt-non-interactive"
-          tg_dir: ${{ inputs.working_directory }}
-      - name: Search Plans
-        id: search_plans
         run: |
-          TFOUT="$(find . \( -not \( -path '*/.terragrunt-cache' -prune \) \) \( -name tfplan.out -o -name tfplan.json \))"
-          echo "$TFOUT"          
-          echo "tfplans<<EOF" >> $GITHUB_OUTPUT
-          echo "$TFOUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          cd ${{ inputs.working_directory }}
+          terragrunt --terragrunt-non-interactive run-all plan ${{ inputs.action == 'destroy' && '-destroy' || '' }} --terragrunt-out-dir ${{ github.workspace }}/.tfplans
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          exit $exit_code
       - name: Upload Plan files
         uses: actions/upload-artifact@v4
         with:
           name: environment-release-plan
           path: |
             .placeholder
-            ${{ steps.search_plans.outputs.tfplans }}
-            ${{ steps.search_plans.outputs.tfplans_json }}
+            .tfplans/**/*
   deploy:
     needs:
       - prevalidate
@@ -132,20 +134,31 @@ jobs:
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           tf-summarize-version: v0.3.10
+      - name: Setup OpenTofu
+        id: setup_opentofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.tofu_version }}
+          tofu_wrapper: false
+      - name: Setup Terragrunt v${{ env.tg_version }}
+        run: |
+          sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.tg_version }}/terragrunt_linux_amd64"
+          sudo chmod +x /bin/terragrunt
+          terragrunt -v
       - name: Terragrunt ${{ inputs.action }} ${{ inputs.working_directory }}
-        uses: gruntwork-io/terragrunt-action@v2
-        id: plan
+        id: apply
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        with:
-          tofu_version: ${{ env.tofu_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_command: "run-all ${{ inputs.action }} ${{ inputs.action == 'apply' && 'tfplan.out' || '' }} --terragrunt-non-interactive"
-          tg_dir: ${{ inputs.working_directory }}
+        run: |
+          cd ${{ inputs.working_directory }}
+          terragrunt --terragrunt-non-interactive run-all ${{ inputs.action }} --terragrunt-out-dir ${{ github.workspace }}/.tfplans
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          exit $exit_code
       # Create a VERSION file to use through the build
       - name: Set Version File
         env:
@@ -158,7 +171,7 @@ jobs:
         with:
           token: ${{ secrets.BOT_TOKEN }}
           output: CHANGELOG.md
-      # Create GitHub Release
+          # Create GitHub Release
 #      - name: GitHub Release
 #        uses: softprops/action-gh-release@v2
 #        with:
