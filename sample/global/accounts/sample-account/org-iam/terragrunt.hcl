@@ -2,7 +2,7 @@ locals {
   local_vars  = yamldecode(file("./inputs.yaml"))
   global_vars = yamldecode(file(find_in_parent_folders("global-inputs.yaml")))
   global_tags = jsondecode(file(find_in_parent_folders("global-tags.json")))
-  local_tags  = jsondecode(file(find_in_parent_folders("local-tags.json")))
+  local_tags  = jsondecode(file("./local-tags.json"))
 
   tags = merge(
     local.global_tags,
