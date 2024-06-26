@@ -6,3 +6,10 @@
 TRONADOR_AUTO_INIT := true
 
 -include $(shell curl -sSL -o .tronador "https://cowk.io/acc"; echo .tronador)
+
+
+clean::
+	@find . -name 'tfplan.out' -type f -exec rm -rf {} \;
+	@find . -name '*.tfplan' -type f -exec rm -rf {} \;
+	@find . -name '.terraform.lock.hcl' -type f -exec rm -rf {} \;
+	@find . -name '.terragrunt-cache' -type d -exec rm -rf {} \;

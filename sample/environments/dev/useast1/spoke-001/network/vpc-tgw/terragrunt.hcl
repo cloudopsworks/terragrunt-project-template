@@ -5,7 +5,7 @@ locals {
   env_vars    = yamldecode(file(find_in_parent_folders("env-inputs.yaml")))
   global_vars = yamldecode(file(find_in_parent_folders("global-inputs.yaml")))
 
-  local_tags  = jsondecode(file(find_in_parent_folders("local-tags.json")))
+  local_tags  = jsondecode(file("./local-tags.json"))
   spoke_tags  = jsondecode(file(find_in_parent_folders("spoke-tags.json")))
   region_tags = jsondecode(file(find_in_parent_folders("region-tags.json")))
   env_tags    = jsondecode(file(find_in_parent_folders("env-tags.json")))

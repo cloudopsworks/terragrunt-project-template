@@ -64,18 +64,26 @@ jobs:
         with:
           cmd: yq '.cd.automatic' ./cloudopsworks-ci.yaml | tr '[:upper:]' '[:lower:]'
 
-      - name: Terragrunt Format Check
-        uses: gruntwork-io/terragrunt-action@v2
-        id: fmt
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+      - name: Setup OpenTofu
+        id: setup_opentofu
+        uses: opentofu/setup-opentofu@v1
         with:
           tofu_version: ${{ env.tofu_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_command: "hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff"
-          tg_dir: ${{ env.workind_dir }}
-          tg_comment: 1
+          tofu_wrapper: false
+      - name: Setup Terragrunt v${{ env.tg_version }}
+        run: |
+          sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.tg_version }}/terragrunt_linux_amd64"
+          sudo chmod +x /bin/terragrunt
+          terragrunt -v
+
+      - name: Terragrunt Format Check
+        id: fmt
+        continue-on-error: true
+        run: |
+          terragrunt --terragrunt-working-dir ${{ env.workind_dir }} hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          exit $exit_code
 
       # Get source of Configuration parameters (sensitive information)
       - name: Get Configuration source
@@ -91,7 +99,6 @@ jobs:
           cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
 
       - name: Terragrunt Validate All
-        uses: gruntwork-io/terragrunt-action@v2
         id: validate
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -99,20 +106,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        with:
-          tofu_version: ${{ env.tofu_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_command: "validate --terragrunt-non-interactive"
-          tg_dir: ${{ env.workind_dir }}
-          tg_comment: 1
-
-      - name: Create Plan Directory
-        run: mkdir -p ./.plans
+        continue-on-error: true
+        run: |
+          terragrunt --terragrunt-working-dir ${{ env.workind_dir }} validate --terragrunt-non-interactive
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          exit $exit_code
 
       - name: Hard Fail Validation Not Success
         run: |
-          result_fmt="${{ steps.fmt.outputs.tg_action_exit_code }}"
-          result_validate="${{ steps.validate.outputs.tg_action_exit_code }}"
+          result_fmt="${{ steps.fmt.outputs.exit_code }}"
+          result_validate="${{ steps.validate.outputs.exit_code }}"
           
           if [[ "$result_fmt" == "0" && "$result_validate" == "0" ]] ; then
             echo "All OK... nothing todo"
