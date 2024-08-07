@@ -73,12 +73,12 @@ jobs:
         id: config_source
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.terraform.parameters.source' ./cloudopsworks-ci.yaml
+          cmd: yq '.terraform.parameters.source' .github/cloudopsworks-ci.yaml
       - name: Get the deployments configuration
         id: deploy_conf
         uses: mikefarah/yq@master
         with:
-          cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
+          cmd: yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml
       - name: Setup OpenTofu
         id: setup_opentofu
         uses: opentofu/setup-opentofu@v1
