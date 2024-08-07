@@ -62,7 +62,7 @@ jobs:
         id: check_automatic
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.cd.automatic' ./cloudopsworks-ci.yaml | tr '[:upper:]' '[:lower:]'
+          cmd: yq '.cd.automatic' .github/cloudopsworks-ci.yaml | tr '[:upper:]' '[:lower:]'
 
       - name: Setup OpenTofu
         id: setup_opentofu
@@ -90,13 +90,13 @@ jobs:
         id: config_source
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.terraform.parameters.source' ./cloudopsworks-ci.yaml
+          cmd: yq '.terraform.parameters.source' .github/cloudopsworks-ci.yaml
 
       - name: Get the deployments configuration
         id: deploy_conf
         uses: mikefarah/yq@master
         with:
-          cmd: yq -o=json -I=0 '.cd.deployments' cloudopsworks-ci.yaml
+          cmd: yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml
 
       - name: Terragrunt Validate All
         id: validate
@@ -240,13 +240,13 @@ jobs:
         id: reviewers_count
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.config.requiredReviewers' ./cloudopsworks-ci.yaml
+          cmd: yq '.config.requiredReviewers' .github/cloudopsworks-ci.yaml
 
       - name: Read all reviewers from config file
         id: reviewers_json
         uses: mikefarah/yq@master
         with:
-          cmd: yq -o=json -I=0 '.config.reviewers' ./cloudopsworks-ci.yaml
+          cmd: yq -o=json -I=0 '.config.reviewers' .github/cloudopsworks-ci.yaml
 
       - name: Add review and approval labels
         uses: actions/github-script@v7
