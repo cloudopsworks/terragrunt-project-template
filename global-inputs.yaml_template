@@ -15,3 +15,4 @@ account:
 default:
   region: <AWS_REGION>
   sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/TerraformAccessRole
+  #sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/OrganizationAllowAllAccessAssumeRole #Use this first time on commons/account/org-iam
