@@ -169,7 +169,7 @@ jobs:
           echo -n "$NEXT_VERSION" > VERSION
       # Output Changelog from previous tag
       - name: Changelog
-        uses: heinrichreimer/action-github-changelog-generator@v2.3
+        uses: heinrichreimer/action-github-changelog-generator@v2.4
         with:
           token: ${{ secrets.BOT_TOKEN }}
           output: CHANGELOG.md
