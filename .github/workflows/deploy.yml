@@ -51,7 +51,27 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-  plan:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          fetch-depth: 0
+      - name: Validate Sync with main branch
+        run: |
+          # First determine if main branch is named main or master
+          main_branch=$(git branch -l --format "%(refname:short)" | egrep "master|main")
+          if [ -z "$main_branch" ]; then
+              echo "Main branch not found"
+              exit 1
+          fi
+          # Validates if current ref is behind main branch, if behind this script must hard-fail
+          git fetch origin $main_branch
+          # get the numbers of commits behind main_branch
+          commits_behind=$(git rev-list --count HEAD..$main_branch)
+          if [ $commits_behind -gt 0 ]; then
+              echo "Current branch is $commits_behind commits behind $main_branch"
+              exit 1
+          fi
+
     needs:
       - prevalidate
     runs-on: ubuntu-latest
