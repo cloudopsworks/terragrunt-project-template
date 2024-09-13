@@ -20,6 +20,22 @@ permissions:
   checks: write
 
 jobs:
+  pre_validate:
+    outputs:
+      repo_type: ${{ steps.repo_type.outputs.result }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get repository type
+        id: repo_type
+        run: |
+          if [ -f .github/.iac ]; then
+            echo "result=iac" >> $GITHUB_OUTPUT
+          elif [ -f .github/.docker ]; then
+            echo "result=dockeronly" >> $GITHUB_OUTPUT
+          else
+            echo "result=sourcecode" >> $GITHUB_OUTPUT
+          fi
+
   push_tag:
     if: ${{ github.event.pull_request.merged == true && ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref,'support/') ) }}
     runs-on: ubuntu-latest
@@ -48,6 +64,7 @@ jobs:
     if: always()
     needs:
       - push_tag
+      - pre-validate
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -67,7 +84,13 @@ jobs:
         run: make gitflow/hotfix/purge
 
       - name: Delete local & remote Feature
-        if: ${{ github.event.pull_request.merged == true && startsWith(github.head_ref, 'feature/') }}
+        if: ${{ github.event.pull_request.merged == true && startsWith(github.head_ref, 'feature/') && needs.pre_validate.outputs.repo_type != 'iac' }}
         run: |
           FEATURE=$(echo "${{ github.head_ref }}" | sed -e 's/feature\///g')
           make gitflow/feature/purge:$FEATURE
+
+      - name: Delete local & remote Feature
+        if: ${{ github.event.pull_request.merged == true && startsWith(github.head_ref, 'feature/') && needs.pre_validate.outputs.repo_type == 'iac' }}
+        run: |
+          FEATURE=$(echo "${{ github.head_ref }}" | sed -e 's/feature\///g')
+          make gitflow/feature/purge-no-develop:$FEATURE
