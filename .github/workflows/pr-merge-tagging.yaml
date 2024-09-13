@@ -25,6 +25,13 @@ jobs:
       repo_type: ${{ steps.repo_type.outputs.result }}
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          fetch-depth: 1
+          fetch-tags: true
+          ref: ${{ github.head_ref }}
       - name: Get repository type
         id: repo_type
         run: |
