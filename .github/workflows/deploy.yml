@@ -71,7 +71,7 @@ jobs:
               echo "Current branch is $commits_behind commits behind $main_branch"
               exit 1
           fi
-
+  plan:
     needs:
       - prevalidate
     runs-on: ubuntu-latest
