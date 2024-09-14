@@ -57,7 +57,7 @@ jobs:
           fetch-depth: 0
       - name: Validate Sync with main branch
         run: |
-          main_branch=$(git branch -l --format "%(refname:short)" | egrep "master|main")
+          main_branch=$(git branch -r --format "%(refname:short)" | grep origin | egrep "master|main" | sed -e 's/origin\///')
           if [ -z "$main_branch" ]; then
               echo "Main branch not found"
               exit 1
