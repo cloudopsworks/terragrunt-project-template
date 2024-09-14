@@ -63,7 +63,7 @@ jobs:
               exit 1
           fi
           git fetch origin $main_branch
-          commits_behind=$(git rev-list --count HEAD..$main_branch)
+          commits_behind=$(git rev-list --count ${{ github.ref_name }}..$main_branch)
           if [ $commits_behind -gt 0 ]; then
               echo "Current branch is $commits_behind commits behind $main_branch"
               exit 1
