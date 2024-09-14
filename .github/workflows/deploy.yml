@@ -57,19 +57,21 @@ jobs:
           fetch-depth: 0
       - name: Validate Sync with main branch
         run: |
-          # First determine if main branch is named main or master
-          main_branch=$(git branch -l --format "%(refname:short)" | egrep "master|main")
+          main_branch=$(git branch -r --format "%(refname:short)" | grep origin | egrep "master|main" | sed -e 's/origin\///')
           if [ -z "$main_branch" ]; then
-              echo "Main branch not found"
-              exit 1
+            echo "Main branch not found"
+            exit 1
           fi
-          # Validates if current ref is behind main branch, if behind this script must hard-fail
           git fetch origin $main_branch
-          # get the numbers of commits behind main_branch
+          git checkout $main_branch
+          git switch -
           commits_behind=$(git rev-list --count HEAD..$main_branch)
+          commits_ahead=$(git rev-list --count $main_branch..HEAD)
           if [ $commits_behind -gt 0 ]; then
-              echo "Current branch is $commits_behind commits behind $main_branch"
-              exit 1
+            echo "Current branch is $commits_behind commits behind $main_branch"
+            exit 1
+          else
+            echo "Current branch is ahead $commits_ahead commits from $main_branch"
           fi
   plan:
     needs:
