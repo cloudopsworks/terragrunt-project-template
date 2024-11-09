@@ -35,14 +35,46 @@ env:
   workind_dir: .
 
 jobs:
-  plan:
+  preload:
+    outputs:
+      runner_set: ${{ steps.runner_set.outputs.result }}
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          fetch-depth: 0
+
+      - name: Get runnerset with yq from global-inputs.yaml
+        id: runner_set
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.runner_set // "ubuntu-latest"' ./global-inputs.yaml
+
+  plan:
+    needs:
+      - preload
+    runs-on: ${{ needs.preload.outputs.runner_set }}
     outputs:
       auto_approve: ${{ steps.check_automatic.outputs.result }}
     steps:
       - uses: actions/labeler@v4
         with:
           repo-token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Install runner-tools
+        working-directory: /tmp
+        shell: bash
+        run: |
+          echo "::group::Install runner-tools"
+          (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y))
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+          sudo apt install -y gh jq curl zip unzip python3 python3-pip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -qo awscliv2.zip
+          which aws || sudo ./aws/install
+          which aws && sudo ./aws/install --update
+          echo "::endgroup::"
 
       # Get the owner repo
       - name: Get owner
