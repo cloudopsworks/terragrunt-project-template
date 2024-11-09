@@ -35,8 +35,26 @@ env:
   workind_dir: .
 
 jobs:
-  plan:
+  preload:
+    outputs:
+      runner_set: ${{ steps.runner_set.outputs.result }}
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          fetch-depth: 0
+
+      - name: Get runnerset with yq from global-inputs.yaml
+        id: runner_set
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.runner_set // "ubuntu-latest"' ./global-inputs.yaml
+
+  plan:
+    needs:
+      - preload
+    runs-on: ${{ needs.preload.outputs.runner_set }}
     outputs:
       auto_approve: ${{ steps.check_automatic.outputs.result }}
     steps:
