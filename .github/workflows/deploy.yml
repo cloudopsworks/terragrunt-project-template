@@ -219,28 +219,3 @@ jobs:
           NEXT_VERSION: "${{ github.ref_name }}"
         run: |
           echo -n "$NEXT_VERSION" > VERSION
-      # Output Changelog from previous tag
-      - name: Changelog
-        uses: heinrichreimer/action-github-changelog-generator@v2.4
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          output: CHANGELOG.md
-          # Create GitHub Release
-#      - name: GitHub Release
-#        uses: softprops/action-gh-release@v2
-#        with:
-#          token: ${{ secrets.BOT_TOKEN }}
-#          name: "Release ${{ github.ref_name }}"
-#          body_path: CHANGELOG.md
-#          prerelease: ${{ steps.workspace.outputs.isPreRelease }}
-#      # Push the changes to Git TAG before deploying anything
-#      - name: Release Version
-#        if: github.ref == 'master'
-#        env:
-#          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-#        run: |
-#          VERSION=$(cat VERSION)
-#          git config --global user.name "${{ vars.BOT_USER }}"
-#          git config --global user.email "${{ vars.BOT_EMAIL }}"
-#          git tag -fa v$VERSION -m "Environment Release v$VERSION"
-#          git push origin v$VERSION
