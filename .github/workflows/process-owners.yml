@@ -35,7 +35,7 @@ jobs:
 
       - name: Pipeline Configuration
         id: config
-        uses: ./bp/ci/config
+        uses: ./bp/ci/iac/config
 
       - name: Process owners files
         uses: ./bp/cd/tasks/repo/owners
