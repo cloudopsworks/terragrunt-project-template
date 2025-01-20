@@ -34,7 +34,7 @@ permissions:
   checks: write
 env:
   tofu_version: 1.7.1
-  tg_version: 0.59.5
+  tg_version: 0.72.2
 jobs:
   preload:
     outputs:
