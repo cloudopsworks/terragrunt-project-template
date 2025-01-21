@@ -1,4 +1,3 @@
-# on Plan generate plan files in each module
 {{ template "terragrunt_vars" }}
 
 # Generate global provider block
@@ -33,4 +32,4 @@ remote_state {
   }
 }
 
-{{ template "terragrunt_version" }}
+{{ template "terragrunt_versions" }}

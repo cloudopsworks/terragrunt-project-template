@@ -20,13 +20,18 @@ variables:
 dependencies:
   - name: aws_config
     template-url: ./aws
-    skip: {{ ne target_cloud "aws" }}
+    output-folder: .
+    skip: "{{ ne .target_cloud \"aws\" }}"
   - name: azure_config
     template-url: ./azure
-    skip: {{ ne target_cloud "azure" }}
+    output-folder: .
+    skip: "{{ ne .target_cloud \"azure\" }}"
   - name: gcp_config
     template-url: ./gcp
-    skip: {{ ne target_cloud "gcp" }}
+    output-folder: .
+    skip: "{{ ne .target_cloud \"gcp\" }}"
 
 partials:
   - parts/*.hcl
+
+skip_files:

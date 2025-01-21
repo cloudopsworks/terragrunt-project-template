@@ -33,4 +33,4 @@ remote_state {
   }
 }
 
-{{ template "terragrunt_version" }}
+{{ template "terragrunt_versions" }}
