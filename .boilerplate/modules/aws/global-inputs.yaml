@@ -1,0 +1,25 @@
+#Global inputs for all terraform modules
+{{- if .organization_enabled }}
+# Organization related inputs
+organization:
+  id: {{ .organization_id }}
+  account_id: {{ .account_id | quote }}
+  terraform:
+    group_name: {{ .terraform_group_name }}
+{{- end }}
+
+# Sample VARS
+#sample_vars:
+#  var1: value1
+#  list1:
+#    - item1
+#    - item2
+
+# Required
+account:
+  id: {{ .account_id | quote }}
+
+#AWS IAM ROLE required variables for running terraform
+default:
+  region: {{ .default_aws_region | quote }}
+  sts_role_arn: {{ .default_sts_role_arn | quote }}

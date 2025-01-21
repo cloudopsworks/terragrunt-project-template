@@ -1,4 +1,4 @@
-{{ template "terragrunt_vars" }}
+{{- template "terragrunt_vars" }}
 
 # Generate global provider block
 generate "provider" {
@@ -32,4 +32,4 @@ remote_state {
   }
 }
 
-{{ template "terragrunt_versions" }}
+{{- template "terragrunt_versions" }}

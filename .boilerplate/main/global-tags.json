@@ -1,0 +1,8 @@
+{
+  "maintainer-id": "{{ .maintainer_id }}",
+  "maintainer-email": "{{ .maintainer_email }}",
+  "iac-project-name": "{{ .iac_project }}",
+  "zone-ownership-by": "{{ .zone_ownership_by }}",
+  "zone-managed-by": "{{ .zone_managed_by }}",
+  "managed-by": "iac"
+}

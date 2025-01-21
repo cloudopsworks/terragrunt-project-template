@@ -1,17 +1,17 @@
-{{ template "terragrunt_vars" }}
+{{- template "terragrunt_vars" }}
 
 # Generate global provider block
 generate "provider" {
   path      = "provider.g.tf"
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
-provider "aws" {
-  region = "${local.global_vars.default.region}"
-  assume_role {
-    role_arn     = "${local.global_vars.default.sts_role_arn}"
-    session_name = "terragrunt"
+  provider "aws" {
+    region = "${local.global_vars.default.region}"
+    assume_role {
+      role_arn     = "${local.global_vars.default.sts_role_arn}"
+      session_name = "terragrunt"
+    }
   }
-}
 EOF
 }
 
@@ -33,4 +33,4 @@ remote_state {
   }
 }
 
-{{ template "terragrunt_versions" }}
+{{- template "terragrunt_versions" }}

@@ -1,0 +1,67 @@
+##
+# (c) 2025 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+variables:
+  - name: target_cloud
+    order: 0
+    description: "Target Cloud for Terragrunt Project"
+    type: enum
+    default: "aws"
+    options:
+      - aws
+      - azure
+      - gcp
+  - name: mongodb
+    order: 1
+    description: "MongoDB Atlas Support"
+    type: bool
+    default: false
+
+  - name: maintainer_id
+    order: 2
+    description: "Github Maintainer ID"
+    type: string
+    default: "author"
+  - name: maintainer_email
+    order: 3
+    description: "Github Maintainer e-mail address"
+    type: string
+    default: "author@sample.com"
+  - name: zone_ownership_by
+    order: 4
+    description: "Zone Ownership by, recommended values: owned,shared,managed,(Git Organization or account)"
+    default: "owned"
+  - name: zone_managed_by
+    order: 5
+    description: "Zone Managed By, recommended values: owned,shared,(Git account)"
+    default: "owned"
+  - name: iac_project
+    order: 6
+    description: "The IAC project name, recommended to put the name of this repository."
+    default: ""
+
+dependencies:
+  - name: aws_config
+    template-url: ../modules/aws
+    output-folder: .
+    skip: "{{ ne .target_cloud \"aws\" }}"
+  - name: azure_config
+    template-url: ../modules/azure
+    output-folder: .
+    skip: "{{ ne .target_cloud \"azure\" }}"
+  - name: gcp_config
+    template-url: ../modules/gcp
+    output-folder: .
+    skip: "{{ ne .target_cloud \"gcp\" }}"
+
+partials:
+  - ../parts/*.hcl
+
+#skip_files:
+#  - path: "**/boilerplate.yml"
+#  - path: "parts/"
+#  - path: "azure/"
+#  - path: "aws/"
+#  - path: "gcp/"

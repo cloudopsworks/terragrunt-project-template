@@ -1,0 +1,7 @@
+target_cloud: {{ .target_cloud }}
+mongodb: {{ .mongodb }}
+maintainer_id: {{ .maintainer_id }}
+maintainer_email: {{ .maintainer_email }}
+zone_ownership_by: {{ .zone_ownership_by }}
+zone_managed_by: {{ .zone_managed_by }}
+iac_project: {{ .iac_project }}

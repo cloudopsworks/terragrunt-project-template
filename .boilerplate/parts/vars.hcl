@@ -1,4 +1,4 @@
-{{ define "terragrunt_vars" }}
+{{- define "terragrunt_vars" }}
 # on Plan generate plan files in each module
 terraform {
   extra_arguments "plan_file" {
@@ -12,4 +12,4 @@ locals {
   global_vars = yamldecode(file("./global-inputs.yaml"))
   global_tags = jsondecode(file("./global-tags.json"))
 }
-{{ end }}
+{{- end }}

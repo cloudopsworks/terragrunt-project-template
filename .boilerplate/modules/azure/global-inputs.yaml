@@ -1,0 +1,18 @@
+#Global inputs for all terraform modules
+
+# Sample VARS
+#sample_vars:
+#  var1: value1
+#  list1:
+#    - item1
+#    - item2
+
+# Required
+account:
+  id: {{ .account_id | quote }}
+
+#AWS IAM ROLE required variables for running terraform
+default:
+  subscription_id: {{ .subscription_id | quote }}
+  use_msi: {{ .use_msi | quote }}
+  resource_provider_registrations: {{ .resource_provider_registrations | quote }}

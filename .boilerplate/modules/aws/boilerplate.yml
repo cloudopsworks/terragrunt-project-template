@@ -1,0 +1,60 @@
+##
+# (c) 2025 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+variables:
+  - name: mongodb
+    description: "MongoDB Atlas Support"
+    type: bool
+    default: false
+  - name: organization_enabled
+    order: 0
+    description: "Enable Organization Support"
+    type: bool
+    default: false
+  - name: organization_id
+    order: 1
+    description: "Organization ID, required if you respond 'yes' to organization_enabled"
+    type: string
+    default: ""
+  - name: account_id
+    order: 2
+    description: "AWS Account ID, this is required and should be accurate"
+    type: string
+  - name: default_aws_region
+    order: 3
+    description: "Default AWS Region"
+    default: "us-east-1"
+  - name: default_sts_role_arn
+    order: 4
+    description: "Default AWS STS Role ARN"
+    type: string
+    default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
+  - name: terraform_group_name
+    order: 5
+    description: "Terraform Group Name within Organization's AWS IAM"
+    type: string
+    default: "terraform-access"
+
+  - name: terraform_state_bucket
+    order: 6
+    description: "Terraform State S3 Bucket"
+    type: string
+  - name: terraform_state_region
+    order: 7
+    description: "Terraform State Region Location"
+    type: string
+    default: "us-east-1"
+  - name: terraform_state_kms_key_id
+    order: 8
+    description: "Terraform State KMS Key ID, if not set, no encryption will be used (not recommended)"
+    default: ""
+  - name: terraform_state_dynamodb_table
+    order: 9
+    description: "Terraform State DynamoDB Table"
+    type: string
+
+
+partials:
+  - ../../parts/*.hcl
