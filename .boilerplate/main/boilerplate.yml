@@ -55,6 +55,9 @@ dependencies:
     template-url: ../modules/gcp
     output-folder: .
     skip: "{{ ne .target_cloud \"gcp\" }}"
+  - name: cicd
+    template-url: ../modules/cicd
+    output-folder: .github/
 
 partials:
   - ../parts/*.hcl

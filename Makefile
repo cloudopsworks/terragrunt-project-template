@@ -14,6 +14,9 @@ endif
 ifneq (,$(wildcard .inputs_mod))
 	PARAMS2 := --var-file .inputs_mod
 endif
+ifneq (,$(wildcard .github/.inputs_cicd))
+	PARAMS3 := --var-file .github/.inputs_cicd
+endif
 
 clean::
 	@find . -name 'tfplan.out' -type f -exec rm -rf {} \;
@@ -22,4 +25,4 @@ clean::
 	@find . -name '.terragrunt-cache' -type d -exec rm -rf {} \;
 
 init/project: packages/install/boilerplate
-	@$(BOILERPLATE) --template-url .boilerplate/main --output-folder . $(PARAMS1) $(PARAMS2) --disable-dependency-prompt
+	@$(BOILERPLATE) --template-url .boilerplate/main --output-folder . $(PARAMS1) $(PARAMS2) $(PARAMS3) --disable-dependency-prompt --var iac_project=$(basename $(pwd))

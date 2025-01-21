@@ -13,6 +13,27 @@ Terraform Project Build Automation Template
     * gcloud Cli
   * Terragrunt Binary
   * OpenTofu Binary
+## How to use this repository
+You can use this repository as a template to create your own terraform project. <br/>
+Generate your repository through the template through the github interface. <br/>
+Clone the repository to your local machine. <br/>
+Create a new branch to work on your project. <br/>
+This project is configured to support different cloud providers, but one at a time. <br/>
+* AWS
+* Azure
+* Google Cloud
+
+### Initializing the project
+You should initialize the project through the makefile command below. <br/>
+This command will ask you a series of questions to configure the project. <br/>
+```shell
+make init/project
+```
+After successful run of this command, you will have basic configuration of the project available. <br/>
+Also your inputs will be saved in 2 files `.inputs` and `.inputs_mod` <br/>
+`.inputs` file will have the basic inputs you provided. <br/>
+`.inputs_mod` file will have the module inputs for the project you provided. <br/>
+
 ## Terragrunt operations
 ### Plan output
 ```shell
