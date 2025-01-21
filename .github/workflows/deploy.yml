@@ -134,8 +134,11 @@ jobs:
         #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYMENT_AWS_SECRET_ACCESS_KEY }}
+          ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
@@ -162,18 +165,7 @@ jobs:
       name: ${{ inputs.environment }}
     steps:
       - name: Install runner-tools
-        working-directory: /tmp
-        shell: bash
-        run: |
-          echo "::group::Install runner-tools"
-          (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y))
-          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-          sudo apt install -y gh jq curl zip unzip python3 python3-pip
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip -qo awscliv2.zip
-          which aws || sudo ./aws/install
-          which aws && sudo ./aws/install --update
-          echo "::endgroup::"
+        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.BOT_TOKEN }}
@@ -203,8 +195,11 @@ jobs:
         id: apply
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYMENT_AWS_SECRET_ACCESS_KEY }}
+          ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}

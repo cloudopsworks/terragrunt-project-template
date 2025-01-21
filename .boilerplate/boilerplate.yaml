@@ -1,0 +1,32 @@
+##
+# (c) 2025 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+variables:
+  - name: target_cloud
+    description: "Target Cloud for Terragrunt Project"
+    type: enum
+    default: "aws"
+    options:
+      - aws
+      - azure
+      - gcp
+  - name: mongodb
+    description: "MongoDB Atlas Support"
+    type: bool
+    default: false
+
+dependencies:
+  - name: aws_config
+    template-url: ./aws
+    skip: {{ ne target_cloud "aws" }}
+  - name: azure_config
+    template-url: ./azure
+    skip: {{ ne target_cloud "azure" }}
+  - name: gcp_config
+    template-url: ./gcp
+    skip: {{ ne target_cloud "gcp" }}
+
+partials:
+  - parts/*.hcl
