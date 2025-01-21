@@ -1,0 +1,7 @@
+s3:
+  bucket: '{{ .terraform_state_bucket}}'
+  region: '{{ .terraform_state_region }}'
+  {{- if ne .terraform_state_kms_key_id "" }}
+  kms_key_id: '{{ .terraform_state_kms_key_id }}'
+  {{- end }}
+  dynamodb_table: '{{ .terraform_state_dynamodb_table }}'

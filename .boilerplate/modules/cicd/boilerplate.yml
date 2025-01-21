@@ -1,0 +1,56 @@
+##
+# (c) 2025 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+variables:
+  - name: reviewers
+    order: 0
+    description: "Reviewers for Pull Requests"
+    type: list
+    default:
+      - "admin"
+      - "cloudopsworks"
+      - "cloudopsworks-bot"
+  - name: required_reviewers
+    order: 1
+    description: "Number of required reviewers for Pull Requests"
+    type: int
+    default: 1
+  - name: owners
+    order: 2
+    description: "Owners for Pull Requests"
+    type: list
+    default:
+      - "cloudopsworks/dev-ops"
+      - "admin"
+  - name: admin_contributors
+    order: 3
+    description: "Contributors with Admin rights on Repository"
+    type: list
+    default:
+      - "cloudopsworks/dev-ops"
+  - name: triage_contributors
+    order: 4
+    description: "Contributors with Triage rights on Repository"
+    type: list
+    default: []
+  - name: maintain_contributors
+    order: 5
+    description: "Contributors with Maintain rights on Repository"
+    type: list
+    default: []
+  - name: push_contributors
+    order: 6
+    description: "Contributors with Push rights on Repository"
+    type: list
+    default:
+      - "cloudopsworks/dev-ops"
+  - name: pull_contributors
+    order: 7
+    description: "Contributors with Pull only rights on Repository, if it is in this list cannot push in any way."
+    type: list
+    default: []
+
+partials:
+  - ../../parts/*.hcl

@@ -1,0 +1,29 @@
+reviewers:
+{{- range $item := .reviewers }}
+  - {{ $item }}
+{{- end }}
+owners:
+{{- range $item := .owners }}
+  - {{ $item }}
+{{- end }}
+required_reviewers: {{ .required_reviewers }}
+admin_contributors:
+{{- range $item := .admin_contributors }}
+  - {{ $item }}
+{{- end }}
+triage_contributors:
+{{- range $item := .triage_contributors }}
+  - {{ $item }}
+{{- end }}
+maintain_contributors:
+{{- range $item := .maintain_contributors }}
+  - {{ $item }}
+{{- end }}
+push_contributors:
+{{- range $item := .push_contributors }}
+  - {{ $item }}
+{{- end }}
+pull_contributors:
+{{- range $item := .pull_contributors }}
+  - {{ $item }}
+{{- end }}

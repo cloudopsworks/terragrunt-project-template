@@ -1,39 +1,47 @@
-# terraform-project-template
+# terragrunt-project-template
 Terraform Project Build Automation Template
 * Prerequisites:
-  * Available AWS profile
-  * AWS Cli
-  * aws-vault binary
-* This initial setup creates S3 bucket for terraform state in main account.
-## Sample backend config (have it remote instead of local)
-### Using SSM Parameter Store
-* take in account _*< ssm parameter >*_ should be an existeng SSM parameter in Parameter Store.
-* Usually will be declared on _*cloudopsworks-ci.yaml*_
-* You will need access to the SSM Parameter Store to r etrieve the object.
+  * AWS
+    * Available AWS profile
+    * AWS Cli
+      * aws-vault binary
+  * Azure
+    * Available Service account with access and permissions
+    * Azure Cli
+  * Google Cloud
+    * Available Service account with access and permissions
+    * gcloud Cli
+  * Terragrunt Binary
+  * OpenTofu Binary
+## How to use this repository
+You can use this repository as a template to create your own terraform project. <br/>
+Generate your repository through the template through the github interface. <br/>
+Clone the repository to your local machine. <br/>
+Create a new branch to work on your project. <br/>
+This project is configured to support different cloud providers, but one at a time. <br/>
+* AWS
+* Azure
+* Google Cloud
+
+### Initializing the project
+You should initialize the project through the makefile command below. <br/>
+This command will ask you a series of questions to configure the project. <br/>
 ```shell
-aws-vault exec <profile> -- aws ssm get-parameters \
-  --names "<ssm parameter>" --query "Parameters[0].Value" \
-  --output text > /tmp/remote.tfbackend
+make init/project
+```
+After successful run of this command, you will have basic configuration of the project available. <br/>
+Also your inputs will be saved in 2 files `.inputs` and `.inputs_mod` <br/>
+`.inputs` file will have the basic inputs you provided. <br/>
+`.inputs_mod` file will have the module inputs for the project you provided. <br/>
+
+## Terragrunt operations
+### Plan output
+```shell
+terragrunt --terragrunt-non-interactive --terragrunt-working-dir <module-path> plan
 ```
 
-## Terraform operations
-### Terraform init
+### Plan apply
 ```shell
-aws-vault exec <profile> -- terraform init -backend-config=/tmp/remote.tfbackend
-```
-
-### Terraform workspace selection
-```shell
-aws-vault exec <profile> -- terraform workspace select <workspace name>
-```
-
-### Terraform plan output
-```shell
-aws-vault exec <profile> -- terraform plan -var-file tfvars/<env>.terraform.tfvars -out /tmp/plan.out
-```
-
-### Terraform apply
-```shell
-aws-vault exec <profile> -- terraform apply /tmp/plan.out
+terragrunt --terragrunt-non-interactive --terragrunt-working-dir <module-path> apply tfplan.out
 ```
 

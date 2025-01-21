@@ -4,6 +4,7 @@
 #            Distributed Under Apache v2.0 License
 #
 # CI/CD configurations
+
 # Repo & CD Configurations
 # Some of them previously managed in OWNERS file
 # now are managed from here
@@ -24,28 +25,62 @@ config:
     - .github
 
   # Optional only needed if not automatic or protection is true
-  requiredReviewers: 1
+  requiredReviewers: {{ .required_reviewers }}
 
   reviewers:
-    - admin
-    - cloudopsworks
-    - cloudopsworks-bot
+    {{- range $item := .reviewers }}
+    - {{ $item }}
+    {{- end }}
 
   # Optional Only needed for permit owners to perform commits under protected branches.
   # Teams are specified as org/team-name
   owners:
-    - cloudopsworks/dev-ops
-    - admin
+    {{- range $item := .owners }}
+    - {{ $item }}
+    {{- end }}
 
   # Optional configure the repository members
   contributors:
+    {{- if .admin_contributors }}
     admin:
-      - cloudopsworks/dev-ops
+    {{- range $item := .admin_contributors }}
+      - {{ $item }}
+    {{- end }}
+    {{- else }}
+    admin: []
+    {{- end }}
+    {{- if .triage_contributors }}
+    triage:
+    {{- range $item := .triage_contributors }}
+      - {{ $item }}
+    {{- end }}
+    {{- else }}
     triage: []
+    {{- end }}
+    {{- if .pull_contributors }}
+    pull:
+    {{- range $item := .pull_contributors }}
+      - {{ $item }}
+    {{- end }}
+    {{- else }}
     pull: []
+    {{- end }}
+    {{- if .push_contributors }}
     push:
-      - cloudopsworks/dev-ops
+    {{- range $item := .push_contributors }}
+      - {{ $item }}
+    {{- end }}
+    {{- else }}
+    push: []
+    {{- end }}
+    {{- if .maintain_contributors }}
+    maintain:
+    {{- range $item := .maintain_contributors }}
+      - {{ $item }}
+    {{- end }}
+    {{- else }}
     maintain: []
+    {{- end }}
 
 cd:
   # Indicate that the environment makes automatic merges and deploys

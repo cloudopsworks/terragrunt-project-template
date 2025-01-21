@@ -1,0 +1,13 @@
+##
+# (c) 2025 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+variables:
+  - name: mongodb
+    description: "MongoDB Atlas Support"
+    type: bool
+    default: false
+
+partials:
+  - ../../parts/*.hcl
