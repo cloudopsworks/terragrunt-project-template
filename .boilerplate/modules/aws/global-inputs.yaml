@@ -15,6 +15,10 @@ organization:
 #    - item1
 #    - item2
 
+{{- if .mongodb }}
+{{ template "mongodb_atlas" . }}
+{{- end }}
+
 # Required
 account:
   id: {{ .account_id | quote }}

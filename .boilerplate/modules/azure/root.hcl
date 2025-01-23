@@ -25,6 +25,7 @@ remote_state {
     use_azuread_auth     = true
     use_msi              = try(local.global_vars.default.use_msi, false)
     subscription_id      = local.state.conf.azurerm.subscription_id
+    tenant_id            = local.state.conf.azurerm.tenant_id
     resource_group_name  = local.state.conf.azurerm.resource_group_name
     storage_account_name = local.state.conf.azurerm.storage_account_name
     container_name       = local.state.conf.azurerm.container_name

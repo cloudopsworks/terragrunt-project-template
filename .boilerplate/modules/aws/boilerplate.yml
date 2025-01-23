@@ -55,6 +55,27 @@ variables:
     description: "Terraform State DynamoDB Table"
     type: string
 
+  - name: mongodb_secret_sts_role_arn
+    order: 10
+    description: "(optional) MongoDB Atlas Provider Secret STS Role ARN, is required if indicated MongoDB Atlas Support=true"
+    type: string
+    default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
+  - name: mongodb_secret_region
+    order: 11
+    description: "(optional) MongoDB Atlas Provider Secret Region, is required if indicated MongoDB Atlas Support=true"
+    default: "us-east-1"
+    reference: default_aws_region
+  - name: mongodb_secret_name
+    order: 12
+    description: "(optional) MongoDB Atlas Provider Secret Name, is required if indicated MongoDB Atlas Support=true"
+    type: string
+    default: "/secrets/mongodb-atlas-admin"
+  - name: mongodb_secret_sts_endpoint
+    order: 13
+    description: "(optional) MongoDB Atlas Provider Secret STS Endpoint, is required if indicated MongoDB Atlas Support=true"
+    type: string
+    default: "https://sts.{{ .mongodb_secret_region }}.amazonaws.com"
 
 partials:
   - ../../parts/*.hcl
+  - ./parts/*.yaml

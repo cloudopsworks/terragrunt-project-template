@@ -1,0 +1,8 @@
+{{ define "mongodb_atlas" }}
+# MongoDB Atlas for module configuration
+mongodb_atlas:
+  secrets:
+    keyvault_name: {{ .mongodb_secret_keyvault_name | quote }}
+    keyvault_rg_name: {{ .mongodb_secret_keyvault_resourcegroup_name | quote }}
+    keyvault_filter: {{ .mongodb_secret_name_filter | quote }}
+{{ end }}
