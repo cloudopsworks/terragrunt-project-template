@@ -5,9 +5,74 @@
 #
 variables:
   - name: mongodb
+    order: 0
     description: "MongoDB Atlas Support"
     type: bool
     default: false
 
+  - name: tenant_id
+    order: 1
+    description: "Azure Tenant ID"
+    type: string
+    default: ""
+  - name: default_subscription_id
+    order: 2
+    description: "Azure Subscription ID"
+    type: string
+    default: ""
+  - name: use_msi
+    order: 3
+    description: "Use Managed Service Identity"
+    type: bool
+    default: false
+  - name: resource_provider_registrations
+    order: 4
+    description: "Resource Provider Registrations"
+    type: string
+    default: false
+
+  - name: terraform_state_subscription_id
+    order: 5
+    description: "Terraform State Subscription ID"
+    type: string
+    default: "{{ .default_subscription_id }}"
+  - name: terraform_state_resource_group_name
+    order: 6
+    description: "Terraform State Resource Group Name"
+    type: string
+    default: "terraform-state"
+  - name: terraform_state_storage_account_name
+    order: 7
+    description: "Terraform State Storage Account Name"
+    type: string
+    default: "terraformstate"
+  - name: terraform_state_container_name
+    order: 8
+    description: "Terraform State Container Name"
+    type: string
+    default: "terraform-state"
+  - name: terraform_state_tenant_id
+    order: 9
+    description: "Terraform State Tenant ID"
+    type: string
+    default: "{{ .tenant_id }}"
+
+  - name: mongodb_secret_keyvault_name
+    order: 10
+    description: "MongoDB Atlas Secret KeyVault Name"
+    type: string
+    default: "secret_kv"
+  - name: mongodb_secret_keyvault_resourcegroup_name
+    order: 11
+    description: "MongoDB Atlas Secret KeyVault Resource Group Name"
+    type: string
+    default: "secret_rg"
+  - name: mongodb_secret_name_filter
+    order: 12
+    description: "MongoDB Atlas Secret Name Filter"
+    type: string
+    default: "mongodb-atlas-admin-"
+
 partials:
   - ../../parts/*.hcl
+  - ./parts/*.yaml

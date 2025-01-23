@@ -7,12 +7,21 @@
 #    - item1
 #    - item2
 
+{{- if .mongodb }}
+{{ template "mongodb_atlas" . }}
+{{- end }}
+
 # Required
 account:
-  id: {{ .account_id | quote }}
+  tenant_id: {{ .tenant_id | quote }}
+
+{{- if .mongodb_atlas_enabled }}
+{{ template "mongodb_atlas" }}
+{{- end }}
+
 
 #AWS IAM ROLE required variables for running terraform
 default:
-  subscription_id: {{ .subscription_id | quote }}
+  subscription_id: {{ .default_subscription_id | quote }}
   use_msi: {{ .use_msi | quote }}
   resource_provider_registrations: {{ .resource_provider_registrations | quote }}

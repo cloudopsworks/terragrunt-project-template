@@ -1,0 +1,9 @@
+{{ define "mongodb_atlas" }}
+# MongoDB Atlas for module configuration
+mongodb_atlas:
+  secrets:
+    sts_role_arn: {{ .mongodb_secret_sts_role_arn | quote }}
+    region: {{ .mongodb_secret_region | quote }}
+    name: {{ .mongodb_secret_name | quote }}
+    sts_endpoint: {{ .mongodb_secret_sts_endpoint | quote }}
+{{ end }}

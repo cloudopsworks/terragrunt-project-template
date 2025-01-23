@@ -1,4 +1,3 @@
-mongodb: {{ .mongodb }}
 organization_enabled: {{ .organization_enabled }}
 organization_id: {{ .organization_id | quote }}
 account_id: {{ .account_id | quote }}
@@ -9,3 +8,9 @@ terraform_state_bucket: {{ .terraform_state_bucket | quote }}
 terraform_state_region: {{ .terraform_state_region | quote }}
 terraform_state_kms_key_id: {{ .terraform_state_kms_key_id | quote }}
 terraform_state_dynamodb_table: {{ .terraform_state_dynamodb_table | quote }}
+{{- if .mongodb }}
+mongodb_secret_sts_role_arn: {{ .mongodb_secret_sts_role_arn | quote }}
+mongodb_secret_region: {{ .mongodb_secret_region | quote }}
+mongodb_secret_name: {{ .mongodb_secret_name | quote }}
+mongodb_secret_sts_endpoint: {{ .mongodb_secret_sts_endpoint | quote }}
+{{- end }}
