@@ -10,15 +10,15 @@ GITVERSION ?= $(INSTALL_PATH)/gitversion
 
 BOILERPLATE := $(INSTALL_PATH)/boilerplate
 ifneq (,$(wildcard .inputs))
-    PARAMS1 := --var-file .inputs
+    PARAMS1 := --var-file=.inputs
 endif
 ifneq (,$(wildcard .inputs_mod))
-	PARAMS2 := --var-file .inputs_mod
+	PARAMS2 := --var-file=.inputs_mod
 endif
 ifneq (,$(wildcard .github/.inputs_cicd))
-	PARAMS3 := --var-file .github/.inputs_cicd
+	PARAMS3 := --var-file=.github/.inputs_cicd
 endif
-USER_VARS ?= ""
+USER_VARS ?=
 
 ## Lint terragrunt modules
 lint:
@@ -53,7 +53,7 @@ clean::
 
 ## Initialize the project with boilerplate
 init/project:: packages/install/boilerplate
-	@$(BOILERPLATE) --template-url .boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) --disable-dependency-prompt --var iac_project=$(shell basename $$(pwd))
+	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) --var=iac_project=$(shell basename $$(pwd)) --disable-dependency-prompt
 
 ## Cleanup project boilerplate cache
 clean/project::
