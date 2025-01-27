@@ -11,4 +11,4 @@ variables:
 
 partials:
   - ../../parts/*.hcl
-  - ../../parts/*.yaml
+  - ../parts/*.yaml
