@@ -78,4 +78,4 @@ variables:
 
 partials:
   - ../../parts/*.hcl
-  - ../parts/aws/*.yaml
+  - ./parts/*.yaml

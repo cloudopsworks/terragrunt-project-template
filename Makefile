@@ -53,7 +53,7 @@ clean::
 
 ## Initialize the project with boilerplate
 init/project:: packages/install/boilerplate
-	@$(BOILERPLATE) --template-url .boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) --disable-dependency-prompt --var iac_project=$(shell basename $$(pwd))
+	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) --disable-dependency-prompt --var iac_project=$(shell basename $$(pwd))
 
 ## Cleanup project boilerplate cache
 clean/project::

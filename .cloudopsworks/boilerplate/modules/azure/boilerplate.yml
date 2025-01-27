@@ -75,4 +75,4 @@ variables:
 
 partials:
   - ../../parts/*.hcl
-  - ../parts/azure/*.yaml
+  - ./parts/*.yaml
