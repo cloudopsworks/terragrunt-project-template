@@ -180,7 +180,7 @@ jobs:
         uses: mikefarah/yq@master
         id: extract_list
         with:
-          cmd: echo '${{ steps.terragrunt_folders.outputs.folders }}' | yq e -o=t '.[]'
+          cmd: echo '${{ steps.terragrunt_folders.outputs.folders }}' | yq e -o=t '.[]' | sed '1d'
 
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
