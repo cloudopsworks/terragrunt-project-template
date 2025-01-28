@@ -97,51 +97,12 @@ jobs:
           sudo chmod +x /bin/terragrunt
           terragrunt -v
 
-      - name: Terragrunt Format Check
-        id: fmt
-        continue-on-error: true
-        run: |
-          terragrunt --terragrunt-working-dir ${{ env.workind_dir }} hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff
-          exit_code=$?
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-          exit $exit_code
-
       # Get source of Configuration parameters (sensitive information)
       - name: Get the deployments configuration
         id: deploy_conf
         uses: mikefarah/yq@master
         with:
           cmd: yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml
-
-      - name: Terragrunt Validate All
-        id: validate
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYMENT_AWS_SECRET_ACCESS_KEY }}
-          ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
-          HELM_EXPERIMENTAL_OCI: "1"
-          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        continue-on-error: true
-        run: |
-          terragrunt --terragrunt-working-dir ${{ env.workind_dir }} validate --terragrunt-non-interactive
-          exit_code=$?
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-          exit $exit_code
-
-      - name: Hard Fail Validation Not Success
-        run: |
-          result_fmt="${{ steps.fmt.outputs.exit_code }}"
-          result_validate="${{ steps.validate.outputs.exit_code }}"
-          
-          if [[ "$result_fmt" == "0" && "$result_validate" == "0" ]] ; then
-            echo "All OK... nothing todo"
-          else
-            echo "FMT=$result_fmt\nVALIDATE=$result_validate\n\nIt's NOT OK, will hard fail."
-            exit 1
-          fi
 
       - name: Update Terragrunt folders
         id: terragrunt_folders
@@ -215,6 +176,12 @@ jobs:
         with:
           cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml
 
+      - name: Extract list as items
+        uses: mikefarah/yq@master
+        id: extract_list
+        with:
+          cmd: echo '${{ steps.terragrunt_folders.outputs.folders }}' | yq e -o=t '.[]'
+
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
         continue-on-error: true
@@ -224,6 +191,57 @@ jobs:
           git add .github/workflows/deploy.yml
           git commit -m "chore: Update deploy.yml with terragrunt folders"
           git push origin ${{ github.head_ref }}
+
+      - name: Terragrunt Validate All
+        id: validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYMENT_AWS_SECRET_ACCESS_KEY }}
+          ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        continue-on-error: true
+        run: |
+          items='${{ steps.extract_list.outputs.result }}'
+          for item in $items; do
+            terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
+            exit_code=$?
+            echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+            if [ $exit_code -ne 0 ]; then
+              echo "Error in $item"
+              exit $exit_code
+            fi
+          done
+
+      - name: Terragrunt Format Check
+        id: fmt
+        continue-on-error: true
+        run: |
+          items='${{ steps.extract_list.outputs.result }}'
+          for item in $items; do
+            terragrunt --terragrunt-working-dir $item hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff
+            exit_code=$?
+            echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+            if [ $exit_code -ne 0 ]; then
+              echo "Error in $item"
+              exit $exit_code
+            fi
+          done
+
+      - name: Hard Fail Validation Not Success
+        run: |
+          result_fmt="${{ steps.fmt.outputs.exit_code }}"
+          result_validate="${{ steps.validate.outputs.exit_code }}"
+          
+          if [[ "$result_fmt" == "0" && "$result_validate" == "0" ]] ; then
+            echo "All OK... nothing todo"
+          else
+            echo "FMT=$result_fmt\nVALIDATE=$result_validate\n\nIt's NOT OK, will hard fail."
+            exit 1
+          fi
 
   # Proceed with labeling if the procedure is candidate to be autoapproved
   label_autoapprove:
