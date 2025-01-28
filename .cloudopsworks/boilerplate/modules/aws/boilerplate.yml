@@ -27,7 +27,7 @@ variables:
     order: 3
     description: "AWS Account ID, this is required and should be accurate"
     type: string
-    default: {{ .org_account_id }}
+    default: "{{ .org_account_id }}"
   - name: default_aws_region
     order: 4
     description: "Default AWS Region"
