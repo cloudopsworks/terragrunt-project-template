@@ -3,7 +3,7 @@
 # Organization related inputs
 organization:
   id: {{ .organization_id }}
-  account_id: {{ .account_id | quote }}
+  account_id: {{ .org_account_id | quote }}
   terraform:
     group_name: {{ .terraform_group_name }}
 {{- end }}
