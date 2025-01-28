@@ -31,7 +31,7 @@ permissions:
 
 env:
   tofu_version: 1.7.1
-  tg_version: 0.58.5
+  tg_version: 0.72.2
   workind_dir: .
 
 jobs:
