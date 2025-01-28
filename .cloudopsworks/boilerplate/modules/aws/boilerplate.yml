@@ -15,63 +15,68 @@ variables:
     default: false
   - name: organization_id
     order: 1
-    description: "Organization ID, required if you respond 'yes' to organization_enabled"
+    description: "(optional) Organization ID, required if you respond 'yes' to organization_enabled"
+    type: string
+    default: ""
+  - name: org_account_id
+    order: 2
+    description: "(optional) Organization Account ID, required if you respond 'yes' to organization_enabled"
     type: string
     default: ""
   - name: account_id
-    order: 2
+    order: 3
     description: "AWS Account ID, this is required and should be accurate"
     type: string
+    default: {{ .org_account_id }}
   - name: default_aws_region
-    order: 3
+    order: 4
     description: "Default AWS Region"
     default: "us-east-1"
   - name: default_sts_role_arn
-    order: 4
+    order: 5
     description: "Default AWS STS Role ARN"
     type: string
     default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
   - name: terraform_group_name
-    order: 5
+    order: 6
     description: "Terraform Group Name within Organization's AWS IAM"
     type: string
     default: "terraform-access"
 
   - name: terraform_state_bucket
-    order: 6
+    order: 7
     description: "Terraform State S3 Bucket"
     type: string
   - name: terraform_state_region
-    order: 7
+    order: 8
     description: "Terraform State Region Location"
     type: string
     default: "us-east-1"
   - name: terraform_state_kms_key_id
-    order: 8
+    order: 9
     description: "Terraform State KMS Key ID, if not set, no encryption will be used (not recommended)"
     default: ""
   - name: terraform_state_dynamodb_table
-    order: 9
+    order: 10
     description: "Terraform State DynamoDB Table"
     type: string
 
   - name: mongodb_secret_sts_role_arn
-    order: 10
+    order: 11
     description: "(optional) MongoDB Atlas Provider Secret STS Role ARN, is required if indicated MongoDB Atlas Support=true"
     type: string
     default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
   - name: mongodb_secret_region
-    order: 11
-    description: "(optional) MongoDB Atlas Provider Secret Region, is required if indicated MongoDB Atlas Support=true"
-    default: "us-east-1"
-    reference: default_aws_region
-  - name: mongodb_secret_name
     order: 12
+    description: "(optional) MongoDB Atlas Provider Secret Region, is required if indicated MongoDB Atlas Support=true"
+    default: "{{ .default_aws_region }}"
+  - name: mongodb_secret_name
+    order: 13
     description: "(optional) MongoDB Atlas Provider Secret Name, is required if indicated MongoDB Atlas Support=true"
     type: string
     default: "/secrets/mongodb-atlas-admin"
   - name: mongodb_secret_sts_endpoint
-    order: 13
+    order: 14
     description: "(optional) MongoDB Atlas Provider Secret STS Endpoint, is required if indicated MongoDB Atlas Support=true"
     type: string
     default: "https://sts.{{ .mongodb_secret_region }}.amazonaws.com"
