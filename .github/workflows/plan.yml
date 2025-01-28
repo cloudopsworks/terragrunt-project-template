@@ -176,12 +176,6 @@ jobs:
         with:
           cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml
 
-      - name: Extract list as items
-        uses: mikefarah/yq@master
-        id: extract_list
-        with:
-          cmd: echo '${{ steps.terragrunt_folders.outputs.folders }}' | yq e -o=t '.[]' | sed '1d'
-
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
         continue-on-error: true
@@ -205,7 +199,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         continue-on-error: true
         run: |
-          items='${{ steps.extract_list.outputs.result }}'
+          items=$(find . -name 'terragrunt.hcl' -exec dirname {} \; | grep -v .terragrunt-cache | grep -v .cloudopsworks |sort)
           for item in $items; do
             terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
             exit_code=$?
@@ -220,7 +214,7 @@ jobs:
         id: fmt
         continue-on-error: true
         run: |
-          items='${{ steps.extract_list.outputs.result }}'
+          items=$(find . -name 'terragrunt.hcl' -exec dirname {} \; | grep -v .terragrunt-cache | grep -v .cloudopsworks |sort)
           for item in $items; do
             terragrunt --terragrunt-working-dir $item hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff
             exit_code=$?
