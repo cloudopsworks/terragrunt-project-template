@@ -204,12 +204,15 @@ jobs:
           changes=$(gh pr view $issue_num --json files --jq ".files.[].path" | sed 's/[^/]*$//' | grep -Ev ".git*|.cloudopsworks" | sort | uniq)
           echo "Changes: $changes"
           for item in $changes; do
-            terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
-            exit_code=$?
-            echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-            if [ $exit_code -ne 0 ]; then
-              echo "Error in $item"
-              exit $exit_code
+            # Check there is a terragrunt .hcl file in directory
+            if [ -f "$item/terragrunt.hcl" ]; then
+              terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
+              exit_code=$?
+              echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+              if [ $exit_code -ne 0 ]; then
+                echo "Error in $item"
+                exit $exit_code
+              fi
             fi
           done
 
