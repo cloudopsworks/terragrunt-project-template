@@ -201,7 +201,7 @@ jobs:
         run: |
           issue_num="${{ github.event.pull_request.number }}"
           # Use the GitHub CLI to get the list of files changed in the PR, strip last part of the path and sort
-          changes=$(gh pr view $issue_num --json files --jq ".files.[].path" | sed 's/[^/]*$//' | sort | uniq)
+          changes=$(gh pr view $issue_num --json files --jq ".files.[].path" | sed 's/[^/]*$//' | grep -Ev ".git*|.cloudopsworks" | sort | uniq)
           echo "Changes: $changes"
           for item in $changes; do
             terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
