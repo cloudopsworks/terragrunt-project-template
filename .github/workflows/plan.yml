@@ -203,18 +203,21 @@ jobs:
           # Use the GitHub CLI to get the list of files changed in the PR, strip last part of the path and sort
           changes=$(gh pr view $issue_num --json files --jq ".files.[].path" | sed 's/[^/]*$//' | grep -Ev ".git*|.cloudopsworks" | sort | uniq)
           echo "Changes: $changes"
+          exit_code=0
           for item in $changes; do
             # Check there is a terragrunt .hcl file in directory
             if [ -f "$item/terragrunt.hcl" ]; then
               terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
               exit_code=$?
-              echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
               if [ $exit_code -ne 0 ]; then
+                echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
                 echo "Error in $item"
                 exit $exit_code
               fi
             fi
           done
+          # default exit code
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
 
       - name: Terragrunt Format Check
         id: fmt
