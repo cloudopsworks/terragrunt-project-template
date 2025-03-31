@@ -30,8 +30,8 @@ permissions:
   checks: write
 
 env:
-  tofu_version: 1.7.1
-  tg_version: 0.72.2
+  tofu_version: 1.7.7
+  tg_version: 0.76.3
   workind_dir: .
 
 jobs:
@@ -207,7 +207,7 @@ jobs:
           for item in $changes; do
             # Check there is a terragrunt .hcl file in directory
             if [ -f "$item/terragrunt.hcl" ]; then
-              terragrunt --terragrunt-working-dir $item validate --terragrunt-non-interactive  
+              terragrunt --working-dir $item validate --non-interactive  
               exit_code=$?
               if [ $exit_code -ne 0 ]; then
                 echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
@@ -225,7 +225,7 @@ jobs:
         run: |
           items=$(find . -name 'terragrunt.hcl' -exec dirname {} \; | grep -v .terragrunt-cache | grep -v .cloudopsworks |sort)
           for item in $items; do
-            terragrunt --terragrunt-working-dir $item hclfmt --terragrunt-check --terragrunt-non-interactive --terragrunt-diff
+            terragrunt --working-dir $item hclfmt --check --non-interactive --diff
             exit_code=$?
             echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
             if [ $exit_code -ne 0 ]; then
