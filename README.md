@@ -37,11 +37,11 @@ Also your inputs will be saved in 2 files `.inputs` and `.inputs_mod` <br/>
 ## Terragrunt operations
 ### Plan output
 ```shell
-terragrunt --terragrunt-non-interactive --terragrunt-working-dir <module-path> plan
+terragrunt --non-interactive --working-dir <module-path> plan
 ```
 
 ### Plan apply
 ```shell
-terragrunt --terragrunt-non-interactive --terragrunt-working-dir <module-path> apply tfplan.out
+terragrunt --non-interactive --working-dir <module-path> apply tfplan.out
 ```
 
