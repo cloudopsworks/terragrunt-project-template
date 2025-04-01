@@ -239,8 +239,7 @@ jobs:
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
-            const pull_request = '${{ github.event.client_payload.slash_command.args.named.pull_request }}';
-            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
+            const pull_request_number = '${{ github.event.issue.number }}';
             
             const output = `Validation requested for Pull request.
             *Format check*: \`${{ steps.fmt.outputs.exit_code == 0 && 'OK' || 'FAILED' }}\`
