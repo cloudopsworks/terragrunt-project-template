@@ -100,18 +100,7 @@ jobs:
     runs-on: ${{ needs.preload.outputs.runner_set }}
     steps:
       - name: Install runner-tools
-        working-directory: /tmp
-        shell: bash
-        run: |
-          echo "::group::Install runner-tools"
-          (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y))
-          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-          sudo apt install -y gh jq curl zip unzip python3 python3-pip
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip -qo awscliv2.zip
-          which aws || sudo ./aws/install
-          which aws && sudo ./aws/install --update
-          echo "::endgroup::"
+        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5
       # Get the owner repo
       - name: Get owner
         id: getowner
@@ -126,9 +115,9 @@ jobs:
           fetch-depth: 0
       - name: Get the deployments configuration
         id: deploy_conf
-        uses: mikefarah/yq@master
-        with:
-          cmd: yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml
+        run: |
+          result=$(yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml)
+          echo "result=$result" >> $GITHUB_OUTPUT
       - name: Setup OpenTofu
         id: setup_opentofu
         uses: opentofu/setup-opentofu@v1
