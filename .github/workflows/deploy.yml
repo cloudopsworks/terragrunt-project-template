@@ -38,7 +38,7 @@ env:
 jobs:
   preload:
     outputs:
-      runner_set: ${{ steps.runner_set.outputs.result }}
+      runner_set: ${{ steps.local_runner_set.outputs.result == '' && steps.runner_set.outputs.result || steps.local_runner_set.outputs.result }}
     #if: ${{ startsWith(github.ref,'refs/heads/release/') || startsWith(github.ref,'refs/heads/develop') || startsWith(github.ref,'refs/heads/support/') || startsWith(github.ref,'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
@@ -72,6 +72,23 @@ jobs:
           else
             echo "Current branch is ahead $commits_ahead commits from $main_branch"
           fi
+
+      - name: Determine if the file inputs.yaml exists on the inputs.working_directory
+        id: check_file
+        run: |
+          if [ -f "${{ inputs.working_directory }}/inputs.yaml" ]; then
+            echo "file_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "file_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Local runner set, get runner set from inputs.yaml located in the inputs.working_directory, only if the file exists
+        id: local_runner_set
+        if: ${{ steps.check_file.outputs.file_exists == 'true' }}
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.runner_set // ""' ${{ inputs.working_directory }}/inputs.yaml
+
       - name: Get runnerset with yq from global-inputs.yaml
         id: runner_set
         uses: mikefarah/yq@master
