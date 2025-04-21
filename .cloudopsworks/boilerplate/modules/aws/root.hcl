@@ -6,7 +6,7 @@ generate "provider" {
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
   provider "aws" {
-    region = "${local.global_vars.default.region}"
+    region = "${local.region_vars.region}"
     assume_role {
       role_arn     = "${local.global_vars.default.sts_role_arn}"
       session_name = "terragrunt"
