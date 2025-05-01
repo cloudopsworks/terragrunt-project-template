@@ -241,7 +241,7 @@ jobs:
           for item in $changes; do
             # Check there is a terragrunt .hcl file in directory
             if [ -f "$item/terragrunt.hcl" ]; then
-              ./cloudopsworks/hooks/module_versions.sh --path $item --report-ghaction --comment-pr-num $issue_num
+              .cloudopsworks/hooks/module_versions.sh --path $item --report-ghaction --comment-pr-num $issue_num
             fi
           done
           # default exit code
