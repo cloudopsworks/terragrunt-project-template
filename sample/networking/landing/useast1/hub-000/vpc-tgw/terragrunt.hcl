@@ -98,7 +98,7 @@ dependency "vpc" {
 }
 
 terraform {
-  source = "github.com/cloudopsworks/terraform-module-aws-transit-gateway.git//?ref=master"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway.git//?ref=v1.0.1"
 }
 
 inputs = {
