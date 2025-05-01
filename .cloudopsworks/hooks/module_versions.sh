@@ -2,10 +2,15 @@
 set -euo pipefail
 
 UPGRADE=false
+REPORT_GHACTION=false
 PATH_VALUE=
+COMMENT_PR=false
+COMMENT_PR_NUM=
 # Support the following flags:
 # -u or --upgrade: Update the terragrunt.hcl files with the latest version
 # -p <path> or --path <path>: Specify a path to search for terragrunt.hcl files
+# -c <comment_pr_num> or --comment-pr-num <comment_pr_num>: Specify a PR number to comment on
+# -r or --report-ghaction: Report to GitHub Actions
 while [[ $# -gt 0 ]]; do
   case $1 in
     -u|--upgrade)
@@ -20,6 +25,21 @@ while [[ $# -gt 0 ]]; do
       fi
       PATH_VALUE="$2"
       shift
+      shift
+      ;;
+    -c|--comment-pr-num)
+      # parses 2 arguments so neede to shift twice
+      if [[ -z "${2:-}" ]]; then
+        echo "Error: --comment_pr_num requires a non-empty option argument."
+        exit 1
+      fi
+      COMMENT_PR=true
+      COMMENT_PR_NUM="$2"
+      shift
+      shift
+      ;;
+    -r|--report-ghaction)
+      REPORT_GHACTION=true
       shift
       ;;
     *)
@@ -78,6 +98,21 @@ find . -type f -name 'terragrunt.hcl' | grep -v '.terragrunt-cache' | while read
       echo "🚨 Module in $file is outdated:"
       echo "    Current: $ref"
       echo "    Latest:  $latest"
+
+      if $REPORT_GHACTION; then
+        if [[ -z "$PATH_VALUE" ]]; then
+          echo "::warning:: 🚨 Module in $file is outdated: $file | $repo | Current: $ref | Latest: $latest"
+        else
+          echo "::warning:: 🚨 Module in $PATH_VALUE/$file is outdated: $file | $repo | Current: $ref | Latest: $latest"
+        fi
+        if $COMMENT_PR; then
+          if [[ -z "$PATH_VALUE" ]]; then
+            gh pr comment $COMMENT_PR_NUM --body "🚨 Module in $file is outdated: $file | $repo | Current: $ref | Latest: $latest" --body-only
+          else
+            gh pr comment $COMMENT_PR_NUM --body "🚨 Module in $PATH_VALUE/$file is outdated: $file | $repo | Current: $ref | Latest: $latest" --body-only
+          fi
+        fi
+      fi
 
       if $UPGRADE; then
         echo "✏️  Updating $file with new ref: $latest"
