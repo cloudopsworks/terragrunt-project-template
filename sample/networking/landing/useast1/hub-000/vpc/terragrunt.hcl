@@ -41,7 +41,7 @@ EOF
 }
 
 terraform {
-  source = "github.com/cloudopsworks/terraform-module-aws-vpc-setup.git//?ref=master"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-vpc-setup.git//?ref=v1.2.17"
 }
 
 inputs = {

@@ -65,7 +65,7 @@ EOF
 }
 
 terraform {
-  source = "github.com/cloudopsworks/terraform-module-aws-organization-basic-iam.git//?ref=master"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-organization-basic-iam.git//?ref=v1.1.6"
 }
 
 inputs = {
