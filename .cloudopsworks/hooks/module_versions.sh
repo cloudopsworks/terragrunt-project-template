@@ -9,7 +9,7 @@ if [[ "${1:-}" == "--upgrade" ]]; then
 fi
 
 echo "🔍 Searching for terragrunt.hcl files..."
-find . -type f -name 'terragrunt.hcl' | while read -r file; do
+find . -type f -name 'terragrunt.hcl' | grep -v '.terragrunt-cache' | while read -r file; do
   echo ""
   echo "📄 Processing: $file"
 
