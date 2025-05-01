@@ -129,6 +129,63 @@ jobs:
           sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.tg_version }}/terragrunt_linux_amd64"
           sudo chmod +x /bin/terragrunt
           terragrunt -v
+      - name: Terragrunt Check Updated Module Version and Report
+        id: check_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYMENT_AWS_SECRET_ACCESS_KEY }}
+          ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          echo ""
+          file=${{ inputs.working_directory }}/terragrunt.hcl
+          echo "📄 Processing: $file"
+          # Extract raw source line
+          source_line=$(grep -E '^\s*source\s*=' "$file" || true)
+          if [[ -z "$source_line" ]]; then
+            echo "⚠️  No source found in $file"
+            continue
+          fi
+          # Strip 'source =' and outer quotes (escaped properly)
+          source_url=$(echo "$source_line" | sed -E 's/^\s*source\s*=\s*\"([^\"]+)\"/\1/')
+          #
+          # Match pattern: supports ?ref= and //?ref=
+          if [[ "$source_url" =~ git::https://github.com/([^/]+/[^/.]+)(\.git)?(//[^?]*)?\?ref=([^\"]+) ]]; then
+            repo="${BASH_REMATCH[1]}"
+            ref="${BASH_REMATCH[4]}"
+            echo "🔗 GitHub Repo: $repo"
+            echo "📌 Current Ref: $ref"
+            # Get tags via GitHub CLI (uses GH_TOKEN)
+            tags=$(gh api "repos/${repo}/tags" --jq '.[].name' || echo "")
+            if [[ -z "$tags" ]]; then
+              echo "❌ Failed to fetch tags for $repo"
+              continue
+            fi
+            #
+            # Extract highest semver-style tag
+            latest=$(echo "$tags" | grep -E '^v?[0-9]+(\.[0-9]+)*$' | sort -V | tail -n1)
+            if [[ -z "$latest" ]]; then
+              echo "⚠️  No semantic version tags found for $repo"
+              echo "::info:: No semantic version tags found for $repo"
+              continue
+            fi
+            # Output result
+            if [[ "$ref" != "$latest" ]]; then
+              echo "🚨 Module in $file is outdated:"
+              echo "    Current: $ref"
+              echo "    Latest:  $latest"
+              echo "::warning:: 🚨 Module in $file is outdated: $file | $repo | Current: $ref | Latest: $latest"
+            else
+              echo "✅ Module in $file is up to date."
+            fi
+          else
+            echo "⚠️  Could not parse GitHub ref from source URL in $file"
+            echo "    Found: $source_url"
+          fi
       - name: Terragrunt plan ${{ inputs.working_directory }}
         id: plan
         #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
