@@ -2,10 +2,40 @@
 set -euo pipefail
 
 UPGRADE=false
+PATH_VALUE=
+# Support the following flags:
+# -u or --upgrade: Update the terragrunt.hcl files with the latest version
+# -p <path> or --path <path>: Specify a path to search for terragrunt.hcl files
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -u|--upgrade)
+      UPGRADE=true
+      shift
+      ;;
+    -p|--path)
+      # parses 2 arguments so neede to shift twice
+      if [[ -z "${2:-}" ]]; then
+        echo "Error: --path requires a non-empty option argument."
+        exit 1
+      fi
+      PATH_VALUE="$2"
+      shift
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
 
-# Detect --upgrade flag
-if [[ "${1:-}" == "--upgrade" ]]; then
-  UPGRADE=true
+#if PATH_VALUE is not empty CD to that directory
+if [[ -n "$PATH_VALUE" ]]; then
+  if [[ ! -d "$PATH_VALUE" ]]; then
+    echo "Error: $PATH_VALUE is not a directory."
+    exit 1
+  fi
+  cd "$PATH_VALUE" || exit 1
 fi
 
 echo "🔍 Searching for terragrunt.hcl files..."
