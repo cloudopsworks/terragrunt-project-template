@@ -6,11 +6,25 @@ REPORT_GHACTION=false
 PATH_VALUE=
 COMMENT_PR=false
 COMMENT_PR_NUM=
+# Help function
+function show_help() {
+  echo "Usage: $0 [options]"
+  echo ""
+  echo "Options:"
+  echo "  -u, --upgrade            Update the terragrunt.hcl files with the latest version"
+  echo "  -p, --path <path>       Specify a path to search for terragrunt.hcl files"
+  echo "  -c, --comment-pr-num <comment_pr_num> Specify a PR number to comment on"
+  echo "  -r, --report-ghaction    Report to GitHub Actions"
+  echo "  -h, --help              Show this help message"
+}
+
+
 # Support the following flags:
 # -u or --upgrade: Update the terragrunt.hcl files with the latest version
 # -p <path> or --path <path>: Specify a path to search for terragrunt.hcl files
 # -c <comment_pr_num> or --comment-pr-num <comment_pr_num>: Specify a PR number to comment on
 # -r or --report-ghaction: Report to GitHub Actions
+# -h or --help: Show help message
 while [[ $# -gt 0 ]]; do
   case $1 in
     -u|--upgrade)
@@ -42,8 +56,15 @@ while [[ $# -gt 0 ]]; do
       REPORT_GHACTION=true
       shift
       ;;
+    -h|--help)
+      # print Command Help use a function
+      show_help
+      exit 0
+      ;;
     *)
+      # print Command Help
       echo "Unknown option: $1"
+      show_help
       exit 1
       ;;
   esac
