@@ -128,9 +128,9 @@ find . -type f -name 'terragrunt.hcl' | grep -v '.terragrunt-cache' | while read
         fi
         if $COMMENT_PR; then
           if [[ -z "$PATH_VALUE" ]]; then
-            gh pr comment $COMMENT_PR_NUM --body "🚨 Module in $file is outdated: $file | $repo | Current: $ref | Latest: $latest" --body-only
+            gh pr comment $COMMENT_PR_NUM --body "🚨 Module in $file is outdated: $file | $repo | Current: $ref | Latest: $latest"
           else
-            gh pr comment $COMMENT_PR_NUM --body "🚨 Module in $PATH_VALUE/$file is outdated: $file | $repo | Current: $ref | Latest: $latest" --body-only
+            gh pr comment $COMMENT_PR_NUM --body "🚨 Module in $PATH_VALUE/$file is outdated: $file | $repo | Current: $ref | Latest: $latest"
           fi
         fi
       fi
