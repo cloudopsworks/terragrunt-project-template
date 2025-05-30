@@ -218,7 +218,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
         run: |
-          terragrunt --non-interactive run-all ${{ inputs.action }} --out-dir ${{ github.workspace }}/${{ inputs.working_directory }}/.tfplans
+          terragrunt --non-interactive run-all ${{ inputs.action == 'destroy' && 'apply' || inputs.action }} --out-dir ${{ github.workspace }}/${{ inputs.working_directory }}/.tfplans
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           exit $exit_code
