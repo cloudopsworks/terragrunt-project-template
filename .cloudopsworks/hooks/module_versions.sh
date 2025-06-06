@@ -109,7 +109,7 @@ find . -type f -name 'terragrunt.hcl' | grep -v '.terragrunt-cache' | while read
     fi
 
     # Extract highest semver-style tag
-    latest=$(echo "$tags" | grep -E '^v?[0-9]+(\.[0-9]+)*$' | sort -V | tail -n1)
+    latest=$(echo "$tags" | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
     if [[ -z "$latest" ]]; then
       echo "⚠️  No semantic version tags found for $repo"
       continue
