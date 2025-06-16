@@ -130,7 +130,7 @@ dependency "tgw" {
 }
 
 terraform {
-  source = "git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway.git//?ref=v1.0.1"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-transit-gateway.git//?ref=v1.0.2"
 }
 
 inputs = {

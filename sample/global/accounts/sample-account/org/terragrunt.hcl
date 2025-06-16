@@ -16,7 +16,7 @@ include {
 
 terraform {
   #source = "git::https://github.com/cloudopsworks/terraform-module-aws-organizations.git//?ref=v2.0.4"
-  source = "git::https://github.com/cloudopsworks/terraform-module-aws-organizations.git//?ref=v2.2.3"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-organizations.git//?ref=v2.4.0"
 }
 
 inputs = {

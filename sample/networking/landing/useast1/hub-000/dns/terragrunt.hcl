@@ -98,7 +98,7 @@ dependency "vpc" {
 }
 
 terraform {
-  source = "git::https://github.com/cloudopsworks/terraform-module-aws-dns-setup.git//?ref=v1.0.4"
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-dns-setup.git//?ref=v1.0.5"
 }
 
 inputs = {
