@@ -6,9 +6,13 @@ locals {
   global_tags = jsondecode(file("./global-tags.json"))
   script_path = "${get_parent_terragrunt_dir()}/.cloudopsworks/hooks/parse_outputs.sh"
   dotted_path = replace(path_relative_to_include(), "/", ".")
-  region_vars = try(yamldecode(file("${path_relative_to_include()}/../region-inputs.yaml")), yamldecode(file("${path_relative_to_include()}/../../region-inputs.yaml")), {
-    region = local.global_vars.default.region
-  })
+  region_vars = try(yamldecode(file("${path_relative_to_include()}/../region-inputs.yaml")),
+    yamldecode(file("${path_relative_to_include()}/../../region-inputs.yaml")),
+    yamldecode(file("${path_relative_to_include()}/../../../region-inputs.yaml")),
+    {
+      region = local.global_vars.default.region
+    }
+  )
 }
 # on Plan generate plan files in each module
 terraform {
