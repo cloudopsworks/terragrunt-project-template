@@ -12,7 +12,7 @@ on:
     inputs:
       action:
         type: string
-        description: 'The action to perfotm: plan/apply/destroy'
+        description: 'The action to perfotm: plan/apply/destroy/force-unlock/import'
         required: true
         default: 'apply'
       environment:
@@ -76,7 +76,6 @@ jobs:
           else
             echo "Current branch is ahead $commits_ahead commits from $main_branch"
           fi
-
       - name: Determine if the file inputs.yaml exists on the inputs.working_directory
         id: check_file
         run: |
@@ -85,14 +84,12 @@ jobs:
           else
             echo "file_exists=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Local runner set, get runner set from inputs.yaml located in the inputs.working_directory, only if the file exists
         id: local_runner_set
         if: ${{ steps.check_file.outputs.file_exists == 'true' }}
         uses: mikefarah/yq@master
         with:
           cmd: yq '.runner_set // ""' ${{ inputs.working_directory }}/inputs.yaml
-
       - name: Get runnerset with yq from global-inputs.yaml
         id: runner_set
         uses: mikefarah/yq@master
@@ -102,6 +99,8 @@ jobs:
     needs:
       - preload
     runs-on: ${{ needs.preload.outputs.runner_set }}
+    outputs:
+      run_deploy: ${{ contains(fromJSON('["apply", "destroy"]'), inputs.action) }}
     steps:
       - name: Install runner-tools
         uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.9
@@ -147,8 +146,10 @@ jobs:
         shell: bash
         run: |
           .cloudopsworks/hooks/module_versions.sh --path ${{ inputs.working_directory }} --report-ghaction
-      - name: Terragrunt plan ${{ inputs.working_directory }}
+      # Run Plan on the working directory only on apply plan or destroy actions (generate plan files)
+      - name: Terragrunt plan - ${{ inputs.working_directory }}
         id: plan
+        if: ${{ contains(fromJSON('["apply", "plan", "destroy"]'), inputs.action) }}
         #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -174,11 +175,45 @@ jobs:
             .placeholder
             **/tfplan.tfplan
             **/tfplan.out
+      # Run terragrunt action with the action specified in inputs.action
+      - name: Terragrunt ${{ inputs.action }} - ${{ inputs.working_directory }}
+        id: run_action
+        if: ${{ ! contains(fromJSON('["apply", "plan", "destroy"]'), inputs.action) }}
+        #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYMENT_AWS_SECRET_ACCESS_KEY }}
+          ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        working-directory: ${{ inputs.working_directory }}
+        run: |
+          if [ ! -f terragrunt.hcl ]; then
+            echo "Terragrunt configuration file not found in ${{ inputs.working_directory }}"
+            exit 1
+          fi
+          terragrunt --non-interactive ${{ inputs.action }}
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          exit $exit_code
+      - name: Upload Plan files
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-release-plan
+          include-hidden-files: true
+          path: |
+            .placeholder
+            **/tfplan.tfplan
+            **/tfplan.out
   deploy:
     needs:
       - preload
       - plan
     runs-on: ${{ needs.preload.outputs.runner_set }}
+    if: ${{ needs.plan.outputs.run_deploy == 'true' }}
     environment:
       name: ${{ inputs.environment }}
     steps:
