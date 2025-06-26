@@ -100,7 +100,7 @@ jobs:
       - preload
     runs-on: ${{ needs.preload.outputs.runner_set }}
     outputs:
-      run_deploy: ${{ contains(fromJSON('["apply", "destroy"]'), inputs.action) }}
+      run_deploy: ${{ contains(fromJSON('["apply", "destroy"]'), inputs.action) && 'true' || 'false' }}
     steps:
       - name: Install runner-tools
         uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.9
@@ -147,7 +147,7 @@ jobs:
         run: |
           .cloudopsworks/hooks/module_versions.sh --path ${{ inputs.working_directory }} --report-ghaction
       # Run Plan on the working directory only on apply plan or destroy actions (generate plan files)
-      - name: Terragrunt plan - ${{ inputs.working_directory }}
+      - name: "Terragrunt plan: ${{ inputs.working_directory }}"
         id: plan
         if: ${{ contains(fromJSON('["apply", "plan", "destroy"]'), inputs.action) }}
         #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
@@ -166,17 +166,8 @@ jobs:
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           exit $exit_code
-      - name: Upload Plan files
-        uses: actions/upload-artifact@v4
-        with:
-          name: environment-release-plan
-          include-hidden-files: true
-          path: |
-            .placeholder
-            **/tfplan.tfplan
-            **/tfplan.out
       # Run terragrunt action with the action specified in inputs.action
-      - name: Terragrunt ${{ inputs.action }} - ${{ inputs.working_directory }}
+      - name: "Terragrunt Custom action: ${{ inputs.action }} - ${{ inputs.working_directory }}"
         id: run_action
         if: ${{ ! contains(fromJSON('["apply", "plan", "destroy"]'), inputs.action) }}
         #continue-on-error: ${{ steps.check_automatic.output.result != 'true' }}
