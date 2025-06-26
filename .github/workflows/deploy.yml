@@ -201,6 +201,7 @@ jobs:
           exit $exit_code
       - name: Upload Plan files
         uses: actions/upload-artifact@v4
+        if: ${{ contains(fromJSON('["apply", "destroy"]'), inputs.action) }}
         with:
           name: environment-release-plan
           include-hidden-files: true
