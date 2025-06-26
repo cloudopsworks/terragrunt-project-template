@@ -39,7 +39,7 @@ jobs:
         uses: cloudopsworks/blueprints/cd/checkout@v5.9
         with:
           token: ${{ secrets.BOT_TOKEN_SCOPED }}
-          blueprint_ref: 'v5.8'
+          blueprint_ref: 'v5.9'
 
       - name: Pipeline Configuration
         id: config
