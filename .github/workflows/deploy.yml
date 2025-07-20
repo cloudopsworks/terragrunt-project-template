@@ -27,7 +27,7 @@ on:
         options:
           - .
 concurrency:
-  group: plan-deploy-${{ github.repository }}
+  group: plan-deploy-${{ github.repository }}-${{ inputs.working_directory }}
   cancel-in-progress: false
 permissions:
   contents: write
