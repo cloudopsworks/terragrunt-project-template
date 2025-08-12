@@ -4,15 +4,9 @@ locals {
   state_conf  = yamldecode(file("./state_conf.yaml"))
   global_vars = yamldecode(file("./global-inputs.yaml"))
   global_tags = jsondecode(file("./global-tags.json"))
-  script_path = "${get_parent_terragrunt_dir()}/.cloudopsworks/hooks/parse_outputs.sh"
+  script_path = "${get_parent_terragrunt_dir()}/.cloudopsworks/hooks"
   dotted_path = replace(path_relative_to_include(), "/", ".")
-  region_vars = try(yamldecode(file("${path_relative_to_include()}/../region-inputs.yaml")),
-    yamldecode(file("${path_relative_to_include()}/../../region-inputs.yaml")),
-    yamldecode(file("${path_relative_to_include()}/../../../region-inputs.yaml")),
-    {
-      region = local.global_vars.default.region
-    }
-  )
+  region_vars = yamldecode(file(find_in_parent_folders("region-inputs.yaml")))
 }
 # on Plan generate plan files in each module
 terraform {
@@ -23,7 +17,7 @@ terraform {
 
   after_hook "feed_outputs" {
     commands = ["apply","refresh"]
-    execute  = ["/bin/bash", local.script_path, local.dotted_path, "${get_parent_terragrunt_dir()}"]
+    execute  = ["/bin/bash", "${local.script_path}/parse_outputs.sh", local.dotted_path, "${get_parent_terragrunt_dir()}"]
   }
 }
 {{- end }}

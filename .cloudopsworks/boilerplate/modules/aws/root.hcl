@@ -7,10 +7,6 @@ generate "provider" {
   contents  = <<EOF
   provider "aws" {
     region = "${local.region_vars.region}"
-    assume_role {
-      role_arn     = "${local.global_vars.default.sts_role_arn}"
-      session_name = "terragrunt"
-    }
   }
 EOF
 }
