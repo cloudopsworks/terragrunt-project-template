@@ -8,6 +8,10 @@ PROFILE_OPTS=()
 REGION_OPTS=()
 INCLUDE_SERVICE_LINKED=false
 DRY_RUN=false
+ASSUME_ROLE_ARN=""
+ASSUME_ROLE_SESSION_NAME=""
+ASSUME_ROLE_EXTERNAL_ID=""
+ASSUME_ROLE_DURATION_SECS=3600
 
 usage() {
   cat <<'USAGE'
@@ -21,6 +25,10 @@ Usage:
     [--fullname-sep SEP] \
     [--profile AWS_PROFILE] \
     [--region AWS_REGION] \
+    [--assume-role-arn ARN] \
+    [--assume-role-session-name NAME] \
+    [--assume-role-external-id ID] \
+    [--assume-role-duration-secs SECONDS] \
     [--include-service-linked] \
     [--dry-run]
 
@@ -35,6 +43,9 @@ Tags applied (only to roles with ZERO tags currently):
 Notes:
   - Skips AWS service-linked roles (name starting with "AWSServiceRoleFor") by default.
   - Requires IAM permissions: iam:ListRoles, iam:ListRoleTags, iam:TagRole.
+  - If --assume-role-arn is provided, the script will call sts:AssumeRole first and
+    use temporary credentials for all subsequent AWS CLI calls. You may still pass
+    --profile to control the source credentials for the AssumeRole call.
 USAGE
 }
 
@@ -49,6 +60,10 @@ while [[ $# -gt 0 ]]; do
     --fullname-sep) FULLNAME_SEP="${2:-}"; shift 2 ;;
     --profile) PROFILE_OPTS=(--profile "${2:-}"); shift 2 ;;
     --region) REGION_OPTS=(--region "${2:-}"); shift 2 ;;
+    --assume-role-arn) ASSUME_ROLE_ARN="${2:-}"; shift 2 ;;
+    --assume-role-session-name) ASSUME_ROLE_SESSION_NAME="${2:-}"; shift 2 ;;
+    --assume-role-external-id) ASSUME_ROLE_EXTERNAL_ID="${2:-}"; shift 2 ;;
+    --assume-role-duration-secs) ASSUME_ROLE_DURATION_SECS="${2:-}"; shift 2 ;;
     --include-service-linked) INCLUDE_SERVICE_LINKED=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -61,6 +76,44 @@ done
 : "${ORG_UNIT:?--organization-unit is required}"
 : "${APP_NAME:?--application-name is required}"
 : "${APP_TYPE:?--application-type is required}"
+
+# If assume role requested, obtain temporary credentials
+if [[ -n "$ASSUME_ROLE_ARN" ]]; then
+  # default session name if not provided
+  if [[ -z "$ASSUME_ROLE_SESSION_NAME" ]]; then
+    ASSUME_ROLE_SESSION_NAME="tag-untagged-iam-roles-$(date +%s)"
+  fi
+
+  echo "🔐 Assuming role: $ASSUME_ROLE_ARN (session: $ASSUME_ROLE_SESSION_NAME)"
+  declare -a ASSUME_ARGS=(
+    --role-arn "$ASSUME_ROLE_ARN"
+    --role-session-name "$ASSUME_ROLE_SESSION_NAME"
+    --duration-seconds "$ASSUME_ROLE_DURATION_SECS"
+  )
+  if [[ -n "$ASSUME_ROLE_EXTERNAL_ID" ]]; then
+    ASSUME_ARGS+=(--external-id "$ASSUME_ROLE_EXTERNAL_ID")
+  fi
+
+  # Attempt assume-role using the provided profile/region as source credentials
+  if ! assume_json="$(aws sts assume-role "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" "${ASSUME_ARGS[@]}" --output json 2>/dev/null)"; then
+    echo "❌ Failed to assume role: $ASSUME_ROLE_ARN" >&2
+    exit 1
+  fi
+
+  # Export temporary credentials for the remainder of the script
+  export AWS_ACCESS_KEY_ID
+  export AWS_SECRET_ACCESS_KEY
+  export AWS_SESSION_TOKEN
+  AWS_ACCESS_KEY_ID="$(echo "$assume_json" | jq -r '.Credentials.AccessKeyId')"
+  AWS_SECRET_ACCESS_KEY="$(echo "$assume_json" | jq -r '.Credentials.SecretAccessKey')"
+  AWS_SESSION_TOKEN="$(echo "$assume_json" | jq -r '.Credentials.SessionToken')"
+
+  if [[ -z "$AWS_ACCESS_KEY_ID" || -z "$AWS_SECRET_ACCESS_KEY" || -z "$AWS_SESSION_TOKEN" ]]; then
+    echo "❌ Could not parse temporary credentials from AssumeRole response." >&2
+    exit 1
+  fi
+  echo "✅ AssumeRole succeeded; using temporary credentials."
+fi
 
 # Helper: simple retry with backoff (handles throttling)
 retry() {
