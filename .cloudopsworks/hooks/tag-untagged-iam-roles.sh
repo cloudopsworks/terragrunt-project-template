@@ -35,7 +35,7 @@ Usage:
     [--include-service-linked] \
     [--dry-run]
 
-Tags applied (only to roles with ZERO tags currently):
+Tags applied (only to resources with ZERO tags currently):
   - organization
   - organization-unit
   - application-name
@@ -44,9 +44,12 @@ Tags applied (only to roles with ZERO tags currently):
   - organization-full-name    (ORG{SEP}UNIT{SEP}APP{SEP}TYPE; SEP default "-")
 
 Notes:
+  - Processes both IAM roles and customer-managed IAM policies in one run.
   - Skips AWS service-linked roles (name starting with "AWSServiceRoleFor" or path "/aws-service-role/") by default.
   - Skips roles that are not modifiable (detected when TagRole returns "This role is not modifiable").
-  - Requires IAM permissions: iam:ListRoles, iam:ListRoleTags, iam:TagRole.
+  - Requires IAM permissions:
+      iam:ListRoles, iam:ListRoleTags, iam:TagRole,
+      iam:ListPolicies, iam:ListPolicyTags, iam:TagPolicy
   - If --assume-role-arn is provided, the script will call sts:AssumeRole first and
     use temporary credentials for all subsequent AWS CLI calls. You may still pass
     --profile to control the source credentials for the AssumeRole call.
@@ -234,8 +237,86 @@ for line in "${ROLES[@]}"; do
 done
 
 echo
-echo "✅ Done."
+echo "✅ Roles done."
 echo "  Total roles:        $total"
 echo "  Tagged now:         $tagged"
 echo "  Already had tags:   $already_tagged"
 echo "  Skipped:            $skipped"
+
+# -----------------------------
+# Process customer-managed IAM policies
+# -----------------------------
+
+echo
+echo "🔎 Scanning IAM customer-managed policies (profile: ${PROFILE_OPTS[*]:-default}, region: ${REGION_OPTS[*]:-default})..."
+# Collect PolicyName and Arn for each customer-managed policy
+mapfile -t POLICIES < <(aws iam list-policies "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" \
+  --scope Local \
+  --query 'Policies[].{Arn:Arn,Name:PolicyName}' --output json | jq -r '.[] | "\(.Name)\t\(.Arn)"')
+
+p_total=${#POLICIES[@]}
+echo "Found $p_total customer-managed policies."
+
+p_processed=0
+p_tagged=0
+p_skipped=0
+p_already_tagged=0
+
+for line in "${POLICIES[@]}"; do
+  policy_name="${line%%$'\t'*}"
+  policy_arn="${line#*$'\t'}"
+
+  # Check current tags; if policy was deleted mid-run, ignore failures
+  if ! p_tags_json="$(retry aws iam list-policy-tags "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" --policy-arn "$policy_arn" --output json 2>/dev/null)"; then
+    ((p_skipped++))
+    echo "⚠️  Could not list tags for policy: $policy_name (skipping)"
+    continue
+  fi
+
+  p_current_count="$(echo "$p_tags_json" | jq '.Tags | length')"
+  if [[ "$p_current_count" -gt 0 ]]; then
+    ((p_already_tagged++))
+    echo "✔️  Already has tags ($p_current_count): $policy_name"
+    continue
+  fi
+
+  # Build tag arguments for policies (same as roles)
+  declare -a P_TAG_ARGS=(
+    "Key=organization,Value=${ORG}"
+    "Key=organization-unit,Value=${ORG_UNIT}"
+    "Key=application-name,Value=${APP_NAME}"
+    "Key=application-type,Value=${APP_TYPE}"
+    "Key=managed-by,Value=${MANAGED_BY}"
+    "Key=organization-full-name,Value=${ORG_FULL_NAME}"
+  )
+
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "🧪 DRY-RUN would tag policy: $policy_name"
+    printf '      %s\n' "${P_TAG_ARGS[@]}"
+  else
+    p_tag_err=""
+    if out_and_err=$( { retry aws iam tag-policy "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" \
+      --policy-arn "$policy_arn" \
+      --tags "${P_TAG_ARGS[@]}"; } 2>&1 ); then
+      ((p_tagged++))
+      echo "🏷️  Tagged policy: $policy_name"
+    else
+      p_tag_err="$out_and_err"
+      ((p_skipped++))
+      echo "❌ Failed to tag policy: $policy_name (skipping)"
+      echo "   Reason: $p_tag_err" >&2
+    fi
+  fi
+
+  ((p_processed++))
+done
+
+echo
+echo "✅ Policies done."
+echo "  Total policies:     $p_total"
+echo "  Tagged now:         $p_tagged"
+echo "  Already had tags:   $p_already_tagged"
+echo "  Skipped:            $p_skipped"
+
+echo
+echo "🎯 Completed tagging roles and policies."
