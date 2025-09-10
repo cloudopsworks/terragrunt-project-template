@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-set -euo pipefail
+#set -euo pipefail
+# Strict-mode: -e (exit on error), -u (treat unset vars as error), -o pipefail (fail on pipe errors).
+# To debug, you may enable xtrace temporarily by uncommenting the next line.
+#set -x
 
 # Defaults
 MANAGED_BY="manual"
@@ -41,7 +44,8 @@ Tags applied (only to roles with ZERO tags currently):
   - organization-full-name    (ORG{SEP}UNIT{SEP}APP{SEP}TYPE; SEP default "-")
 
 Notes:
-  - Skips AWS service-linked roles (name starting with "AWSServiceRoleFor") by default.
+  - Skips AWS service-linked roles (name starting with "AWSServiceRoleFor" or path "/aws-service-role/") by default.
+  - Skips roles that are not modifiable (detected when TagRole returns "This role is not modifiable").
   - Requires IAM permissions: iam:ListRoles, iam:ListRoleTags, iam:TagRole.
   - If --assume-role-arn is provided, the script will call sts:AssumeRole first and
     use temporary credentials for all subsequent AWS CLI calls. You may still pass
@@ -170,7 +174,7 @@ for line in "${ROLES[@]}"; do
   role_path="${line#*$'\t'}"
 
   # Skip service-linked roles unless user opted in
-  if [[ "$INCLUDE_SERVICE_LINKED" == false && "$role_name" == AWSServiceRoleFor* ]]; then
+  if [[ "$INCLUDE_SERVICE_LINKED" == false && ( "$role_name" == AWSServiceRoleFor* || "$role_path" == /aws-service-role/* ) ]]; then
     ((skipped++))
     echo "⏭️  Skip service-linked role: $role_name"
     continue
@@ -206,14 +210,23 @@ for line in "${ROLES[@]}"; do
     echo "🧪 DRY-RUN would tag role: $role_name"
     printf '      %s\n' "${TAG_ARGS[@]}"
   else
-    if retry aws iam tag-role "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" \
+    # Attempt tagging; if the role is not modifiable, skip gracefully.
+    tag_err=""
+    if out_and_err=$( { retry aws iam tag-role "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" \
       --role-name "$role_name" \
-      --tags "${TAG_ARGS[@]}"; then
+      --tags "${TAG_ARGS[@]}"; } 2>&1 ); then
       ((tagged++))
       echo "🏷️  Tagged role: $role_name"
     else
-      ((skipped++))
-      echo "❌ Failed to tag role: $role_name (skipping)"
+      tag_err="$out_and_err"
+      if [[ "$tag_err" == *"is not modifiable"* || "$tag_err" == *"This role is not modifiable"* ]]; then
+        ((skipped++))
+        echo "⏭️  Role not modifiable, skipping: $role_name"
+      else
+        ((skipped++))
+        echo "❌ Failed to tag role: $role_name (skipping)"
+        echo "   Reason: $tag_err" >&2
+      fi
     fi
   fi
 
