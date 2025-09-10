@@ -46,7 +46,8 @@ Tags applied (only to resources with ZERO tags currently):
 Notes:
   - Processes both IAM roles and customer-managed IAM policies in one run.
   - Skips AWS service-linked roles (name starting with "AWSServiceRoleFor" or path "/aws-service-role/") by default.
-  - Skips roles that are not modifiable (detected when TagRole returns "This role is not modifiable").
+  - Uses heuristics to skip known non-modifiable roles (e.g., names starting with "AWSReservedSSO" or roles under path "/aws-reserved/"). Most service roles are modifiable and are NOT skipped unless they match known non-modifiable patterns.
+  - Still handles unexpected non-modifiable errors gracefully when tagging.
   - Requires IAM permissions:
       iam:ListRoles, iam:ListRoleTags, iam:TagRole,
       iam:ListPolicies, iam:ListPolicyTags, iam:TagPolicy
@@ -141,6 +142,21 @@ retry() {
   done
 }
 
+# Heuristic: identify roles that are known to be non-modifiable and should be skipped
+is_role_non_modifiable() {
+  local name="$1"
+  local path="$2"
+  # AWS IAM Identity Center (SSO) creates AWSReservedSSO* roles which are not modifiable
+  if [[ "$name" == AWSReservedSSO* ]]; then
+    return 0
+  fi
+  # Some reserved roles reside under /aws-reserved/ path
+  if [[ "$path" == /aws-reserved/* ]]; then
+    return 0
+  fi
+  return 1
+}
+
 # Sanitize space-heavy inputs for fullname; keep original for individual tag values
 sanitize_for_fullname() {
   # Replace runs of whitespace with single SEP, trim leading/trailing SEP
@@ -183,6 +199,13 @@ for line in "${ROLES[@]}"; do
     continue
   fi
 
+  # Heuristic skip for known non-modifiable roles
+  if is_role_non_modifiable "$role_name" "$role_path"; then
+    ((skipped++))
+    echo "⏭️  Heuristic: role not modifiable, skipping: $role_name"
+    continue
+  fi
+
   # Check current tags
   # If role was deleted mid-run, ignore failures
   if ! tags_json="$(retry aws iam list-role-tags "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" --role-name "$role_name" --output json 2>/dev/null)"; then
@@ -213,24 +236,12 @@ for line in "${ROLES[@]}"; do
     echo "🧪 DRY-RUN would tag role: $role_name"
     printf '      %s\n' "${TAG_ARGS[@]}"
   else
-    # Attempt tagging; if the role is not modifiable, skip gracefully.
-    tag_err=""
-    if out_and_err=$( { retry aws iam tag-role "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" \
-      --role-name "$role_name" \
-      --tags "${TAG_ARGS[@]}"; } 2>&1 ); then
-      ((tagged++))
-      echo "🏷️  Tagged role: $role_name"
-    else
-      tag_err="$out_and_err"
-      if [[ "$tag_err" == *"is not modifiable"* || "$tag_err" == *"This role is not modifiable"* ]]; then
-        ((skipped++))
-        echo "⏭️  Role not modifiable, skipping: $role_name"
-      else
-        ((skipped++))
-        echo "❌ Failed to tag role: $role_name (skipping)"
-        echo "   Reason: $tag_err" >&2
-      fi
-    fi
+    retry aws iam tag-role "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" \
+          --role-name "$role_name" \
+          --tags "${TAG_ARGS[@]}" || ( ((skipped++)) && \
+            echo "❌ Failed to tag role: $role_name (skipping)" && \
+            echo "   Reason: $tag_err" >&2 && continue)
+    echo "🏷️  Tagged role: $role_name"
   fi
 
   ((processed++))
