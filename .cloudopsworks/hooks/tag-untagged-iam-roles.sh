@@ -11,6 +11,7 @@ PROFILE_OPTS=()
 REGION_OPTS=()
 INCLUDE_SERVICE_LINKED=false
 DRY_RUN=false
+REAPPLY=false
 ASSUME_ROLE_ARN=""
 ASSUME_ROLE_SESSION_NAME=""
 ASSUME_ROLE_EXTERNAL_ID=""
@@ -33,6 +34,7 @@ Usage:
     [--assume-role-external-id ID] \
     [--assume-role-duration-secs SECONDS] \
     [--include-service-linked] \
+    [--reapply] \
     [--dry-run]
 
 Tags applied (only to resources with ZERO tags currently):
@@ -48,6 +50,9 @@ Notes:
   - Skips AWS service-linked roles (name starting with "AWSServiceRoleFor" or path "/aws-service-role/") by default.
   - Uses heuristics to skip known non-modifiable roles (e.g., names starting with "AWSReservedSSO" or roles under path "/aws-reserved/"). Most service roles are modifiable and are NOT skipped unless they match known non-modifiable patterns.
   - Still handles unexpected non-modifiable errors gracefully when tagging.
+  - Reapply mode (--reapply):
+      - Roles: reapply tags even if they already have tags, but skip roles that already have tag "managed-by=iac".
+      - Policies: reapply tags even if they already have tags, but skip policies that already have tag "managed-by=iac".
   - Requires IAM permissions:
       iam:ListRoles, iam:ListRoleTags, iam:TagRole,
       iam:ListPolicies, iam:ListPolicyTags, iam:TagPolicy
@@ -73,6 +78,7 @@ while [[ $# -gt 0 ]]; do
     --assume-role-external-id) ASSUME_ROLE_EXTERNAL_ID="${2:-}"; shift 2 ;;
     --assume-role-duration-secs) ASSUME_ROLE_DURATION_SECS="${2:-}"; shift 2 ;;
     --include-service-linked) INCLUDE_SERVICE_LINKED=true; shift ;;
+    --reapply) REAPPLY=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage; exit 1 ;;
@@ -216,9 +222,21 @@ for line in "${ROLES[@]}"; do
 
   current_count="$(echo "$tags_json" | jq '.Tags | length')"
   if [[ "$current_count" -gt 0 ]]; then
-    ((already_tagged++))
-    echo "✔️  Already has tags ($current_count): $role_name"
-    continue
+    if [[ "$REAPPLY" == true ]]; then
+      managed_by_val="$(echo "$tags_json" | jq -r '.Tags[]? | select(.Key=="managed-by") | .Value' | head -n1)"
+      if [[ "$managed_by_val" == "iac" ]]; then
+        ((skipped++))
+        echo "⏭️  Skip role already managed by IaC: $role_name"
+        continue
+      else
+        echo "♻️  Reapplying tags to role (existing tags present but not managed-by=iac): $role_name"
+        # fall-through to tagging
+      fi
+    else
+      ((already_tagged++))
+      echo "✔️  Already has tags ($current_count): $role_name"
+      continue
+    fi
   fi
 
   # Build tag arguments
@@ -241,6 +259,7 @@ for line in "${ROLES[@]}"; do
           --tags "${TAG_ARGS[@]}" || ( ((skipped++)) && \
             echo "❌ Failed to tag role: $role_name (skipping)" && \
             echo "   Reason: $tag_err" >&2 && continue)
+    ((tagged++))
     echo "🏷️  Tagged role: $role_name"
   fi
 
@@ -286,9 +305,21 @@ for line in "${POLICIES[@]}"; do
 
   p_current_count="$(echo "$p_tags_json" | jq '.Tags | length')"
   if [[ "$p_current_count" -gt 0 ]]; then
-    ((p_already_tagged++))
-    echo "✔️  Already has tags ($p_current_count): $policy_name"
-    continue
+    if [[ "$REAPPLY" == true ]]; then
+      p_managed_by_val="$(echo "$p_tags_json" | jq -r '.Tags[]? | select(.Key=="managed-by") | .Value' | head -n1)"
+      if [[ "$p_managed_by_val" == "iac" ]]; then
+        ((p_skipped++))
+        echo "⏭️  Skip policy already managed by IaC: $policy_name"
+        continue
+      else
+        echo "♻️  Reapplying tags to policy (existing tags present but not managed-by=iac): $policy_name"
+        # fall-through to tagging
+      fi
+    else
+      ((p_already_tagged++))
+      echo "✔️  Already has tags ($p_current_count): $policy_name"
+      continue
+    fi
   fi
 
   # Build tag arguments for policies (same as roles)
