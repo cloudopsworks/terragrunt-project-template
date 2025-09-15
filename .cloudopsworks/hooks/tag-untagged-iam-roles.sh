@@ -295,6 +295,7 @@ p_already_tagged=0
 for line in "${POLICIES[@]}"; do
   policy_name="${line%%$'\t'*}"
   policy_arn="${line#*$'\t'}"
+  policy_arn="${line#*$'\t'}"
 
   # Check current tags; if policy was deleted mid-run, ignore failures
   if ! p_tags_json="$(retry aws iam list-policy-tags "${PROFILE_OPTS[@]}" "${REGION_OPTS[@]}" --policy-arn "$policy_arn" --output json 2>/dev/null)"; then
