@@ -7,9 +7,9 @@ generate "provider" {
   contents  = <<EOF
   provider "aws" {
     region = "${local.region_vars.region}"
-{{- if not .enable_assume_role_on_root -}}
+{{- if not .enable_assume_role_on_root }}
 {{- template "provider_assume_role" . }}
-{{- end -}}
+{{- end }}
 EOF
 }
 
