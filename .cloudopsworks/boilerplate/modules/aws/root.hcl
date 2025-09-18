@@ -7,7 +7,9 @@ generate "provider" {
   contents  = <<EOF
   provider "aws" {
     region = "${local.region_vars.region}"
-  }
+{{- if not .enable_assume_role_on_root -}}
+{{- template "provider_assume_role" . }}
+{{- end -}}
 EOF
 }
 
@@ -29,4 +31,7 @@ remote_state {
   }
 }
 
+{{- if .enable_assume_role_on_root -}}
+{{- template "root_assume_role" . }}
+{{- end -}}
 {{- template "terragrunt_versions" . }}

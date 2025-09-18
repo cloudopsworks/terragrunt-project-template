@@ -84,6 +84,12 @@ variables:
     type: string
     default: "https://sts.{{ .mongodb_secret_region }}.amazonaws.com"
 
+  - name: enable_assume_role_on_root
+    order: 15
+    description: "(optional) Enable Assume Role on Root Module."
+    type: bool
+    default: false
+
 partials:
   - ../../parts/*.hcl
   - ../parts/*.yaml
