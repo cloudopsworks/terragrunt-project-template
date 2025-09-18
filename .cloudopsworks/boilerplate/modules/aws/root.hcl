@@ -10,6 +10,7 @@ generate "provider" {
 {{- if not .enable_assume_role_on_root }}
 {{- template "provider_assume_role" . }}
 {{- end }}
+  }
 EOF
 }
 
