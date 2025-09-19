@@ -16,3 +16,7 @@ mongodb_secret_region: {{ .mongodb_secret_region | quote }}
 mongodb_secret_name: {{ .mongodb_secret_name | quote }}
 mongodb_secret_sts_endpoint: {{ .mongodb_secret_sts_endpoint | quote }}
 {{- end }}
+{{- if .runner_set_enabled }}
+runner_set_enabled: {{ .runner_set_enabled }}
+runner_set_name: {{ .runner_set_name | quote }}
+{{- end }}
