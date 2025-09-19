@@ -45,6 +45,16 @@ variables:
     description: "The IAC project name, recommended to put the name of this repository."
     default: ""
 
+  - name: runner_set_enabled
+    order: 7
+    description: "Enable GitHub Runner Set Scheduling"
+    type: bool
+    default: false
+  - name: runner_set_name
+    order: 8
+    description: "GitHub Runner Set Name"
+    default: ""
+
 dependencies:
   - name: aws_config
     template-url: ../modules/aws
