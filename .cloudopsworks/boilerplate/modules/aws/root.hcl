@@ -6,8 +6,8 @@ generate "provider" {
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
   provider "aws" {
-    region = "${local.region_vars.region}"
-{{- if .enable_assume_role_on_root }}
+    region = "${local.region}"
+{{- if not .enable_assume_role_on_root }}
 {{- template "provider_assume_role" . }}
 {{- end }}
   }
