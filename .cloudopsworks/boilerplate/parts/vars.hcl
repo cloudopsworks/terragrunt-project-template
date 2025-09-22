@@ -6,7 +6,13 @@ locals {
   global_tags = jsondecode(file("./global-tags.json"))
   script_path = "${get_parent_terragrunt_dir()}/.cloudopsworks/hooks"
   dotted_path = replace(path_relative_to_include(), "/", ".")
-  region_vars = yamldecode(file(find_in_parent_folders("region-inputs.yaml")))
+  # Allow change STS Role at each Level - region and spoke are optional configs searched in parent folders
+  region_file  = find_in_parent_folders("region-inputs.yaml", "")
+  region_vars  = local.region_file != "" ? yamldecode(file(local.region_file)) : {}
+  spoke_file   = find_in_parent_folders("spoke-inputs.yaml", "")
+  spoke_vars   = local.spoke_file != "" ? yamldecode(file(local.spoke_file)) : {}
+  region       = try(local.region_vars.region, local.global_vars.default.region)
+  sts_role_arn = try(local.region_vars.sts_role_arn, local.spoke_vars.sts_role_arn, local.global_vars.default.sts_role_arn)
 }
 # on Plan generate plan files in each module
 terraform {
