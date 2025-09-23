@@ -89,7 +89,7 @@ Notes:
     dhcp-options, route-table, internet-gateway, network-acl, network-interface, elastic-ip, autoscaling-group,
     s3-bucket, sns-topic, sqs-queue, acm-certificate, kms-key, backup-vault, recovery-point, backup-plan, backup-framework, backup-report-plan.
   - Reapply mode (--reapply):
-      Reapply tags even if resources already have tags, but skip any that have tag "managed-by=iac".
+      Reapply tags even if resources already have tags. The script always skips any resource that has tag "managed-by=iac".
   - Requires permissions:
       tagging:GetResources, tagging:TagResources for listed resource types. If S3 is included, s3:PutBucketTagging
       may be needed implicitly by the service.
@@ -495,15 +495,15 @@ for b64 in "${RESOURCES[@]}"; do
   # Normalize Tags into simple key/value pairs
   tags_len="$(echo "$item_json" | jq -r '.Tags | length')"
 
+  # Always skip if managed-by=iac
+  managed_by_val="$(echo "$item_json" | jq -r '.Tags[]? | select(.Key=="managed-by") | .Value' | head -n1)"
+  if [[ "$managed_by_val" == "iac" ]]; then
+    ((skipped++))
+    ((processed++))
+    continue
+  fi
   if [[ "$REAPPLY" == true ]]; then
-    # Skip if managed-by=iac
-    managed_by_val="$(echo "$item_json" | jq -r '.Tags[]? | select(.Key=="managed-by") | .Value' | head -n1)"
-    if [[ "$managed_by_val" == "iac" ]]; then
-      ((skipped++))
-      ((processed++))
-      continue
-    fi
-    # Else include in reapply set
+    # In reapply, include regardless of existing tags (except managed-by=iac already handled)
     selected_arns+=("$arn"); SELECTED_MAP["$arn"]=1
   else
     # Only tag if zero tags present currently
@@ -530,8 +530,21 @@ for rt in "${RESOURCE_TYPES[@]}"; do
     if [[ -n "${SELECTED_MAP[$arn]:-}" ]]; then
       continue
     fi
-    # Add to selection; treat as untagged/never-tagged
-    selected_arns+=("$arn"); SELECTED_MAP["$arn"]=1; ((native_added++))
+    # For native-discovered resources, double-check tags via Tagging API for this ARN.
+    # If there are any tags, or managed-by=iac is present, skip. Only include if zero tags.
+    tags_check_json="$(aws resourcegroupstaggingapi get-resources ${PROFILE_OPTS:+${PROFILE_OPTS[*]}} ${REGION_OPTS:+${REGION_OPTS[*]}} --resource-arn-list "$arn" --output json 2>/dev/null || true)"
+    tags_len="$(echo "$tags_check_json" | jq -r '.ResourceTagMappingList[0].Tags | length' 2>/dev/null || echo 0)"
+    managed_by_val="$(echo "$tags_check_json" | jq -r '.ResourceTagMappingList[0].Tags[]? | select(.Key=="managed-by") | .Value' 2>/dev/null | head -n1)"
+    if [[ "$managed_by_val" == "iac" ]]; then
+      ((skipped++))
+      continue
+    fi
+    if [[ "$tags_len" =~ ^[0-9]+$ ]] && (( tags_len == 0 )); then
+      selected_arns+=("$arn"); SELECTED_MAP["$arn"]=1; ((native_added++))
+    else
+      ((skipped++))
+      continue
+    fi
   done < <(list_arns_for_type "$rt" | sed '/^$/d')
 done
 
