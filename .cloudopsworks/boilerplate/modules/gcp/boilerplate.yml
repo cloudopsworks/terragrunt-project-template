@@ -11,6 +11,35 @@ variables:
     description: "MongoDB Atlas Support"
     type: bool
     default: false
+  - name: organization_enabled
+    order: 0
+    description: "Enable Organization Support"
+    type: bool
+    default: false
+  - name: organization_id
+    order: 1
+    description: "(optional) Organization ID, required if you respond 'yes' to organization_enabled"
+    type: string
+    default: ""
+  - name: org_project_id
+    order: 2
+    description: "(optional) Organization Account ID, required if you respond 'yes' to organization_enabled"
+    type: string
+    default: ""
+  - name: project_id
+    order: 3
+    description: "Google Cloud Project ID, this is required and should be accurate"
+    type: string
+    default: "{{ .org_project_id }}"
+  - name: default_google_region
+    order: 4
+    description: "Default Google Cloud Region"
+    default: "us-central1"
+  - name: default_impersonate_sa
+    order: 5
+    description: "Default Google Cloud Service Account to Impersonate"
+    type: string
+    default: "terraform@{{ .project_id }}.iam.gserviceaccount.com"
 
 partials:
   - ../../parts/*.hcl

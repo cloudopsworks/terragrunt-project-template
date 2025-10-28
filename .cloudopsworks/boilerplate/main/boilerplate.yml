@@ -80,12 +80,15 @@ dependencies:
     skip: "{{ ne .target_cloud \"gcp\" }}"
   - name: aws_state_config
     template-url: ../states/aws
+    output-folder: .
     skip: "{{ ne .state_type \"s3\" }}"
   - name: gcp_state_config
     template-url: ../states/gcp
+    output-folder: .
     skip: "{{ ne .state_type \"gcs\" }}"
   - name: azure_state_config
     template-url: ../states/azure
+    output-folder: .
     skip: "{{ ne .state_type \"azurerm\" }}"
   - name: cicd
     template-url: ../modules/cicd

@@ -1,0 +1,30 @@
+#Global inputs for all terraform modules
+{{- if .organization_enabled }}
+# Organization related inputs
+organization:
+  id: {{ .organization_id }}
+  project: {{ .project_id | quote }}
+{{- end }}
+
+# Sample VARS
+#sample_vars:
+#  var1: value1
+#  list1:
+#    - item1
+#    - item2
+{{- if .runner_set_enabled }}
+{{ template "runner_set" . }}
+{{- end }}
+
+{{- if .mongodb }}
+{{ template "mongodb_atlas" . }}
+{{- end }}
+
+# Required
+project:
+  id: {{ .project_id | quote }}
+
+#AWS IAM ROLE required variables for running terraform
+default:
+  region: {{ .default_google_region | quote }}
+  impersonate_sa: {{ .default_impersonate_sa | quote }}

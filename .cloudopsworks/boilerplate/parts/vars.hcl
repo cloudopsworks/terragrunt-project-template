@@ -11,8 +11,15 @@ locals {
   region_vars  = local.region_file != "" ? yamldecode(file(local.region_file)) : {}
   spoke_file   = find_in_parent_folders("spoke-inputs.yaml", "")
   spoke_vars   = local.spoke_file != "" ? yamldecode(file(local.spoke_file)) : {}
+{{- if eq .target_cloud "aws" }}
   region       = try(local.region_vars.region, local.global_vars.default.region)
   sts_role_arn = try(local.region_vars.sts_role_arn, local.spoke_vars.sts_role_arn, local.global_vars.default.sts_role_arn)
+{{- end }}
+{{- if eq .target_cloud "gcp" }}
+  project            = local.global_vars.project.id
+  region             = try(local.region_vars.region, local.global_vars.default.region)
+  impersonate_sa     = try(local.region_vars.impersonate_sa, local.spoke_vars.impersonate_sa, local.global_vars.default.impersonate_sa)
+{{- end }}
 }
 # on Plan generate plan files in each module
 terraform {
