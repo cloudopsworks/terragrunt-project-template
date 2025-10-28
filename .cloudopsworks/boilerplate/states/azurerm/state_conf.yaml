@@ -1,0 +1,8 @@
+azurerm:
+  use_msi: '{{ .terraform_state_use_msi }}'
+  use_azuread_auth: '{{ .terraform_state_use_azuread }}'
+  tenant_id: '{{ .terraform_state_tenant_id }}'
+  subscription_id: '{{ .terraform_state_subscription_id }}'
+  resource_group_name: '{{ .terraform_state_rg }}'
+  storage_account_name: '{{ .terraform_state_storage_account }}'
+  container_name: '{{ .terraform_state_container_name }}'

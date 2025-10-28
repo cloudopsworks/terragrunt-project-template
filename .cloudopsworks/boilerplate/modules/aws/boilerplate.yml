@@ -46,46 +46,28 @@ variables:
     type: string
     default: "terraform-access"
 
-  - name: terraform_state_bucket
-    order: 7
-    description: "Terraform State S3 Bucket"
-    type: string
-  - name: terraform_state_region
-    order: 8
-    description: "Terraform State Region Location"
-    type: string
-    default: "us-east-1"
-  - name: terraform_state_kms_key_id
-    order: 9
-    description: "Terraform State KMS Key ID, if not set, no encryption will be used (not recommended)"
-    default: ""
-  - name: terraform_state_dynamodb_table
-    order: 10
-    description: "Terraform State DynamoDB Table"
-    type: string
-
   - name: mongodb_secret_sts_role_arn
-    order: 11
+    order: 7
     description: "(optional) MongoDB Atlas Provider Secret STS Role ARN, is required if indicated MongoDB Atlas Support=true"
     type: string
     default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
   - name: mongodb_secret_region
-    order: 12
+    order: 8
     description: "(optional) MongoDB Atlas Provider Secret Region, is required if indicated MongoDB Atlas Support=true"
     default: "{{ .default_aws_region }}"
   - name: mongodb_secret_name
-    order: 13
+    order: 9
     description: "(optional) MongoDB Atlas Provider Secret Name, is required if indicated MongoDB Atlas Support=true"
     type: string
     default: "/secrets/mongodb-atlas-admin"
   - name: mongodb_secret_sts_endpoint
-    order: 14
+    order: 10
     description: "(optional) MongoDB Atlas Provider Secret STS Endpoint, is required if indicated MongoDB Atlas Support=true"
     type: string
     default: "https://sts.{{ .mongodb_secret_region }}.amazonaws.com"
 
   - name: enable_assume_role_on_root
-    order: 15
+    order: 11
     description: "(optional) Enable Assume Role on Root Module."
     type: bool
     default: false

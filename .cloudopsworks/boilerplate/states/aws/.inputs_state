@@ -1,0 +1,4 @@
+terraform_state_bucket: {{ .terraform_state_bucket | quote }}
+terraform_state_region: {{ .terraform_state_region | quote }}
+terraform_state_kms_key_id: {{ .terraform_state_kms_key_id | quote }}
+terraform_state_dynamodb_table: {{ .terraform_state_dynamodb_table | quote }}

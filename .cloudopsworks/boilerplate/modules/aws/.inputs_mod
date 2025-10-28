@@ -5,10 +5,6 @@ account_id: {{ .account_id | quote }}
 default_aws_region: {{ .default_aws_region | quote }}
 default_sts_role_arn: {{ .default_sts_role_arn | quote }}
 terraform_group_name: {{ .terraform_group_name | quote }}
-terraform_state_bucket: {{ .terraform_state_bucket | quote }}
-terraform_state_region: {{ .terraform_state_region | quote }}
-terraform_state_kms_key_id: {{ .terraform_state_kms_key_id | quote }}
-terraform_state_dynamodb_table: {{ .terraform_state_dynamodb_table | quote }}
 enable_assume_role_on_root: {{ .enable_assume_role_on_root }}
 {{- if .mongodb }}
 mongodb_secret_sts_role_arn: {{ .mongodb_secret_sts_role_arn | quote }}
