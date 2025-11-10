@@ -55,6 +55,16 @@ variables:
     description: "GitHub Runner Set Name"
     default: ""
 
+  - name: state_type
+    order: 9
+    description: "Select State type"
+    type: enum
+    default: "s3"
+    options:
+      - s3
+      - gcs
+      - azurerm
+
 dependencies:
   - name: aws_config
     template-url: ../modules/aws
@@ -68,6 +78,18 @@ dependencies:
     template-url: ../modules/gcp
     output-folder: .
     skip: "{{ ne .target_cloud \"gcp\" }}"
+  - name: aws_state_config
+    template-url: ../states/aws
+    output-folder: .
+    skip: "{{ ne .state_type \"s3\" }}"
+  - name: gcp_state_config
+    template-url: ../states/gcp
+    output-folder: .
+    skip: "{{ ne .state_type \"gcs\" }}"
+  - name: azure_state_config
+    template-url: ../states/azure
+    output-folder: .
+    skip: "{{ ne .state_type \"azurerm\" }}"
   - name: cicd
     template-url: ../modules/cicd
     output-folder: .github/

@@ -1,0 +1,7 @@
+terraform_state_tenant_id: {{ .terraform_state_tenant_id | quote }}
+terraform_state_subscription_id: {{ .terraform_state_subscription_id | quote }}
+terraform_state_rg: {{ .terraform_state_rg | quote }}
+terraform_state_storage_account: {{ .terraform_state_storage_account | quote }}
+terraform_state_container_name: {{ .terraform_state_container_name | quote }}
+terraform_state_use_msi: {{ .terraform_state_use_msi | quote }}
+terraform_state_use_azuread: {{ .terraform_state_use_azuread | quote }}

@@ -18,6 +18,9 @@ endif
 ifneq (,$(wildcard .inputs_mod))
 	PARAMS2 := --var-file=.inputs_mod
 endif
+ifneq (,$(wildcard .inputs_state))
+	PARAMS4 := --var-file=.inputs_state
+endif
 ifneq (,$(wildcard .github/.inputs_cicd))
 	PARAMS3 := --var-file=.github/.inputs_cicd
 endif
@@ -56,7 +59,7 @@ clean::
 
 ## Initialize the project with boilerplate
 init/project:: packages/install/boilerplate
-	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) --var=iac_project=$(shell basename $$(pwd)) --disable-dependency-prompt
+	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) $(PARAMS4) --var=iac_project=$(shell basename $$(pwd)) --disable-dependency-prompt
 
 ## Cleanup project boilerplate cache
 clean/project::

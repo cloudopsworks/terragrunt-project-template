@@ -1,0 +1,2 @@
+terraform_state_bucket: {{ .terraform_state_bucket | quote }}
+terraform_state_encryption_key: {{ .terraform_state_encryption_key | quote }}

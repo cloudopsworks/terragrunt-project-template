@@ -1,0 +1,39 @@
+##
+# (c) 2021-2025
+#     Cloud Ops Works LLC - https://cloudops.works/
+#     Find us on:
+#       GitHub: https://github.com/cloudopsworks
+#       WebSite: https://cloudops.works
+#     Distributed Under Apache v2.0 License
+#
+variables:
+  - name: terraform_state_tenant_id
+    order: 1
+    description: "Azure Tenant ID for Accessing State Storage Account"
+    type: string
+  - name: terraform_state_subscription_id
+    order: 2
+    description: "Azure Subscription ID where the Terraform State Storage Account is located"
+    type: string
+  - name: terraform_state_rg
+    order: 3
+    description: "Terraform State Sotarge Account Resource Group Name"
+    type: string
+  - name: terraform_state_storage_account
+    order: 4
+    description: "Terraform State Storage Account Name"
+    type: string
+  - name: terraform_state_container_name
+    order: 5
+    description: "Terraform State Storage Container Name"
+    type: string
+  - name: terraform_state_use_msi
+    order: 6
+    description: "Use azure MSI to access terraform state"
+    type: bool
+    default: true
+  - name: terraform_state_use_azuread
+    order: 7
+    description: "Use azuread authentication to access terraform state"
+    type: bool
+    default: false

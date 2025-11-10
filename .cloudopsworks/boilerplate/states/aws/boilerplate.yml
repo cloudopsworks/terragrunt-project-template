@@ -1,0 +1,26 @@
+##
+# (c) 2021-2025
+#     Cloud Ops Works LLC - https://cloudops.works/
+#     Find us on:
+#       GitHub: https://github.com/cloudopsworks
+#       WebSite: https://cloudops.works
+#     Distributed Under Apache v2.0 License
+#
+variables:
+  - name: terraform_state_bucket
+    order: 1
+    description: "Terraform State S3 Bucket"
+    type: string
+  - name: terraform_state_region
+    order: 2
+    description: "Terraform State Region Location"
+    type: string
+    default: "us-east-1"
+  - name: terraform_state_kms_key_id
+    order: 3
+    description: "Terraform State KMS Key ID, if not set, no encryption will be used (not recommended)"
+    default: ""
+  - name: terraform_state_dynamodb_table
+    order: 4
+    description: "Terraform State DynamoDB Table"
+    type: string

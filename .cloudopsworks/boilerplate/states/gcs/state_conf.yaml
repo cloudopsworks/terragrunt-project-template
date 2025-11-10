@@ -1,0 +1,5 @@
+gcs:
+  bucket: '{{ .terraform_state_bucket }}'
+  {{- if ne .terraform_state_encryption_key "" }}
+  kms_encryption_key: '{{ .terraform_state_encryption_key }}'
+  {{- end }}
