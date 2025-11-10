@@ -22,7 +22,7 @@ EOF
 generate "backend" {
   path      = "remote_state.g.tf"
   if_exists = "overwrite_terragrunt"
-  content = <<EOF
+  contents = <<EOF
 {{- if eq .state_type "s3" }}
 {{ template "state_config_s3" . }}
 {{- end }}

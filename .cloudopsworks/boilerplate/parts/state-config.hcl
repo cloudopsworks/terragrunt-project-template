@@ -5,7 +5,7 @@ terraform {
     region         = "${local.state_conf.s3.region}"
     kms_key_id     = "${local.state_conf.s3.kms_key_id}"
     dynamodb_table = "${local.state_conf.s3.dynamodb_table}"
-    key            = "$(local.state_prefix}/terraform.tfstate"
+    key            = "${local.state_prefix}/terraform.tfstate"
   }
 }
 {{- end -}}
@@ -14,7 +14,7 @@ terraform {
   backend "gcs" {
     bucket             = "${local.state_conf.gcs.bucket}"
     kms_encryption_key = "${local.state_conf.gcs.kms_encryption_key}"
-    prefix             = "${local.state_prefix}"
+    prefix             = "${local.state_prefix}/terraform.tfstate"
   }
 }
 {{- end -}}

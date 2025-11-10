@@ -1,6 +1,6 @@
-organization_enabled: "{{ .organization_enabled | quote }}"
-organization_id: "{{ .organization_id | quote }}"
-org_project_id: "{{ .org_project_id | quote }}"
-project_id: "{{ .project_id | quote }}"
-default_google_region: "{{ .default_google_region | quote }}"
-default_impersonate_sa: "{{ .default_impersonate_sa | quote }}"
+organization_enabled: {{ .organization_enabled | quote }}
+organization_id: {{ .organization_id | quote }}
+org_project_id: {{ .org_project_id | quote }}
+project_id: {{ .project_id | quote }}
+default_google_region: {{ .default_google_region | quote }}
+default_impersonate_sa: {{ .default_impersonate_sa | quote }}

@@ -20,6 +20,7 @@ locals {
   region             = try(local.region_vars.region, local.global_vars.default.region)
   impersonate_sa     = try(local.region_vars.impersonate_sa, local.spoke_vars.impersonate_sa, local.global_vars.default.impersonate_sa)
 {{- end }}
+  state_prefix       = format("%s/%s", basename(get_repo_root()), path_relative_to_include())
 }
 # on Plan generate plan files in each module
 terraform {
