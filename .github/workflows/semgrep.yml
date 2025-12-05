@@ -15,7 +15,7 @@ on:
       - main
       - master
     paths:
-      - .github/workflows/semgrep.yml
+      - .cloudopsworks/workflows/semgrep.yml
   schedule:
     # random HH:MM to avoid a load spike on GitHub Actions at 00:00
     - cron: '25 1 * * *'
@@ -29,5 +29,5 @@ jobs:
       image: semgrep/semgrep
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: semgrep ci

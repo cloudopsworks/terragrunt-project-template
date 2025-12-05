@@ -54,7 +54,7 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
@@ -112,14 +112,14 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
       - name: Get the deployments configuration
         id: deploy_conf
         run: |
-          result=$(yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml)
+          result=$(yq -o=json -I=0 '.cd.deployments' .cloudopsworks/cloudopsworks-ci.yaml)
           echo "result=$result" >> $GITHUB_OUTPUT
       - name: Setup OpenTofu
         id: setup_opentofu
@@ -211,7 +211,7 @@ jobs:
     steps:
       - name: Install runner-tools
         uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.9
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0

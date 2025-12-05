@@ -92,7 +92,7 @@ dependencies:
     skip: "{{ ne .state_type \"azurerm\" }}"
   - name: cicd
     template-url: ../modules/cicd
-    output-folder: .github/
+    output-folder: .cloudopsworks/
 
 partials:
   - ../parts/*.hcl

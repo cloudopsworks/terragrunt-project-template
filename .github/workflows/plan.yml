@@ -16,7 +16,7 @@ on:
       - support/**
       - release/**
     paths-ignore:
-      #      - .github/workflows/**
+      #      - .cloudopsworks/workflows/**
       - modules/**
 
 concurrency:
@@ -43,7 +43,7 @@ jobs:
       runner_set: ${{ steps.runner_set.outputs.result }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
@@ -77,7 +77,7 @@ jobs:
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
           ref: ${{ github.head_ref }}
@@ -86,7 +86,7 @@ jobs:
         id: check_automatic
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.cd.automatic' .github/cloudopsworks-ci.yaml | tr '[:upper:]' '[:lower:]'
+          cmd: yq '.cd.automatic' .cloudopsworks/cloudopsworks-ci.yaml | tr '[:upper:]' '[:lower:]'
 
       - name: Setup OpenTofu
         id: setup_opentofu
@@ -105,7 +105,7 @@ jobs:
         id: deploy_conf
         uses: mikefarah/yq@master
         with:
-          cmd: yq -o=json -I=0 '.cd.deployments' .github/cloudopsworks-ci.yaml
+          cmd: yq -o=json -I=0 '.cd.deployments' .cloudopsworks/cloudopsworks-ci.yaml
 
       - name: Update Terragrunt folders
         id: terragrunt_folders
@@ -177,7 +177,7 @@ jobs:
       - name: Modify deploy.yml with folderlist
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml
+          cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .cloudopsworks/workflows/deploy.yml
 
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
@@ -185,7 +185,7 @@ jobs:
         run: |
           git config --global user.name "${{ vars.BOT_USER }}"
           git config --global user.email "${{ vars.BOT_EMAIL }}"
-          git add .github/workflows/deploy.yml
+          git add .cloudopsworks/workflows/deploy.yml
           git commit -m "chore: Update deploy.yml with terragrunt folders"
           git push origin ${{ github.head_ref }}
 
@@ -321,7 +321,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
@@ -329,13 +329,13 @@ jobs:
         id: reviewers_count
         uses: mikefarah/yq@master
         with:
-          cmd: yq '.config.requiredReviewers' .github/cloudopsworks-ci.yaml
+          cmd: yq '.config.requiredReviewers' .cloudopsworks/cloudopsworks-ci.yaml
 
       - name: Read all reviewers from config file
         id: reviewers_json
         uses: mikefarah/yq@master
         with:
-          cmd: yq -o=json -I=0 '.config.reviewers' .github/cloudopsworks-ci.yaml
+          cmd: yq -o=json -I=0 '.config.reviewers' .cloudopsworks/cloudopsworks-ci.yaml
 
       - name: Add review and approval labels
         uses: actions/github-script@v7
