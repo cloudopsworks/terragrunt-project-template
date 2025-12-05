@@ -1,4 +1,4 @@
-{{- template "terragrunt_vars" }}
+{{- template "terragrunt_vars" . }}
 
 # Generate global provider block
 generate "provider" {
@@ -15,22 +15,20 @@ EOF
 }
 
 # Generate remote state block
-remote_state {
-  backend = "azurerm"
-  generate = {
-    path = "remote_state.g.tf"
-    if_exists = "overwrite_terragrunt"
-  }
-  config = {
-    use_azuread_auth     = true
-    use_msi              = try(local.global_vars.default.use_msi, false)
-    subscription_id      = local.state.conf.azurerm.subscription_id
-    tenant_id            = local.state.conf.azurerm.tenant_id
-    resource_group_name  = local.state.conf.azurerm.resource_group_name
-    storage_account_name = local.state.conf.azurerm.storage_account_name
-    container_name       = local.state.conf.azurerm.container_name
-    key                  = "${basename(get_repo_root())}/${path_relative_to_include()}/terraform.tfstate"
-  }
+generate "backend" {
+  path      = "remote_state.g.tf"
+  if_exists = "overwrite_terragrunt"
+  contents = <<EOF
+{{- if eq .state_type "s3" }}
+{{ template "state_config_s3" . }}
+{{- end }}
+{{- if eq .state_type "gcs" }}
+{{ template "state_config_gcs" . }}
+{{- end }}
+{{- if eq .state_type "azurerm" }}
+{{ template "state_config_azurerm" . }}
+{{- end }}
+EOF
 }
 
-{{- template "terragrunt_versions" }}
+{{- template "terragrunt_versions" . }}
