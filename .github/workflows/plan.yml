@@ -66,7 +66,7 @@ jobs:
           repo-token: ${{ secrets.BOT_TOKEN }}
 
       - name: Install runner-tools
-        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.9
+        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.10
 
       # Get the owner repo
       - name: Get owner
