@@ -61,14 +61,6 @@ jobs:
     outputs:
       auto_approve: ${{ steps.check_automatic.outputs.result }}
     steps:
-      - uses: actions/labeler@v6
-        with:
-          repo-token: ${{ secrets.BOT_TOKEN }}
-          configuration-path: '.cloudopsworks/labeler.yml'
-
-      - name: Install runner-tools
-        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.10
-
       # Get the owner repo
       - name: Get owner
         id: getowner
@@ -82,6 +74,14 @@ jobs:
         with:
           token: ${{ secrets.BOT_TOKEN }}
           ref: ${{ github.head_ref }}
+
+      - uses: actions/labeler@v6
+        with:
+          repo-token: ${{ secrets.BOT_TOKEN }}
+          configuration-path: '.cloudopsworks/labeler.yml'
+
+      - name: Install runner-tools
+        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.10
 
       - name: Check if automatic
         id: check_automatic
