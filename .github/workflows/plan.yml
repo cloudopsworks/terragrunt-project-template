@@ -33,7 +33,7 @@ permissions:
   checks: write
 
 env:
-  tofu_version: 1.10.7
+  tofu_version: 1.11.4
   tg_version: 0.98.0
   workind_dir: .
 
