@@ -21,8 +21,8 @@ endif
 ifneq (,$(wildcard .inputs_state))
 	PARAMS4 := --var-file=.inputs_state
 endif
-ifneq (,$(wildcard .github/.inputs_cicd))
-	PARAMS3 := --var-file=.github/.inputs_cicd
+ifneq (,$(wildcard .cloudopsworks/.inputs_cicd))
+	PARAMS3 := --var-file=.cloudopsworks/.inputs_cicd
 endif
 USER_VARS ?=
 
@@ -63,4 +63,4 @@ init/project:: packages/install/boilerplate
 
 ## Cleanup project boilerplate cache
 clean/project::
-	@rm -f .inputs .inputs_mod .github/.inputs_cicd
+	@rm -f .inputs .inputs_mod .cloudopsworks/.inputs_cicd
