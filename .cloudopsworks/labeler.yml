@@ -7,13 +7,19 @@
 #     Distributed Under Apache v2.0 License
 #
 release:
-- ./*
+  - base-branch: [ 'main', 'master' ]
+
+feature:
+  - head-branch: [ '^feature' ]
+
+hotfix:
+  - head-branch: [ '^hotfix', '^fix' ]
 
 size-XS:
-- any: [ '*-version.tfvars' ]
+  - any: [ 'inputs.yaml' ]
 
 size-S:
-- any: [ '*-module.tf' ]
+  - any: [ '*-module.hcl', '**/inputs.yaml' ]
 
 size-XL:
-- any: [ '**/*.tf', '!*-version.tfvars', '!*-module.tf' ]
+  - any: [ 'root.hcl', '**/*.hcl', '!**/local-tags.yaml', '!*-module.tf' ]
