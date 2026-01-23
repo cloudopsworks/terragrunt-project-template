@@ -16,8 +16,7 @@ on:
       - support/**
       - release/**
     paths-ignore:
-      #      - .cloudopsworks/workflows/**
-      - modules/**
+      - .cloudopsworks/boilerplate/**
 
 concurrency:
   group: plan-deploy-${{ github.repository }}
@@ -173,7 +172,7 @@ jobs:
       - name: Modify deploy.yml with folderlist
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .cloudopsworks/workflows/deploy.yml
+          cmd: yq -i '.on.workflow_dispatch.inputs.working_directory.options = ${{ steps.terragrunt_folders.outputs.folders }}' .github/workflows/deploy.yml
 
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
@@ -181,7 +180,7 @@ jobs:
         run: |
           git config --global user.name "${{ vars.BOT_USER }}"
           git config --global user.email "${{ vars.BOT_EMAIL }}"
-          git add .cloudopsworks/workflows/deploy.yml
+          git add .github/workflows/deploy.yml
           git commit -m "chore: Update deploy.yml with terragrunt folders"
           git push origin ${{ github.head_ref }}
 
@@ -252,7 +251,7 @@ jobs:
         run: |
           items=$(find . -name 'terragrunt.hcl' -exec dirname {} \; | grep -v .terragrunt-cache | grep -v .cloudopsworks |sort)
           for item in $items; do
-            terragrunt --working-dir $item hclfmt --check --non-interactive --diff
+            terragrunt --working-dir $item hcl format --check --non-interactive --diff
             exit_code=$?
             echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
             if [ $exit_code -ne 0 ]; then
