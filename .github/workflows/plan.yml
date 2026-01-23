@@ -61,9 +61,10 @@ jobs:
     outputs:
       auto_approve: ${{ steps.check_automatic.outputs.result }}
     steps:
-      - uses: actions/labeler@v4
+      - uses: actions/labeler@v6
         with:
           repo-token: ${{ secrets.BOT_TOKEN }}
+          configuration-path: '.cloudopsworks/labeler.yml'
 
       - name: Install runner-tools
         uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.10
