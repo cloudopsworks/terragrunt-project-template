@@ -38,7 +38,7 @@ permissions:
   checks: write
 env:
   tofu_version: 1.10.7
-  tg_version: 0.93.5
+  tg_version: 0.98.0
 jobs:
   preload:
     outputs:
@@ -224,7 +224,7 @@ jobs:
         uses: kishaningithub/setup-tf-summarize@v2
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
-          tf-summarize-version: v0.3.10
+          tf-summarize-version: v0.3.14
       - name: Setup OpenTofu
         id: setup_opentofu
         uses: opentofu/setup-opentofu@v1
