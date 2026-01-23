@@ -54,7 +54,7 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
@@ -112,7 +112,7 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
@@ -162,7 +162,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
         run: |
-          terragrunt --non-interactive run-all plan -input=false ${{ inputs.action == 'destroy' && '-destroy' || '' }} --out-dir ${{ github.workspace }}/${{ inputs.working_directory }}/.tfplans
+          terragrunt --non-interactive run --all plan -input=false ${{ inputs.action == 'destroy' && '-destroy' || '' }} --out-dir ${{ github.workspace }}/${{ inputs.working_directory }}/.tfplans
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           exit $exit_code
@@ -210,12 +210,12 @@ jobs:
       name: ${{ inputs.environment }}
     steps:
       - name: Install runner-tools
-        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.9
-      - uses: actions/checkout@v5
+        uses: cloudopsworks/blueprints/ci/common/install/runner-tools@v5.10
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN }}
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: environment-release-plan
           path: .
@@ -225,17 +225,12 @@ jobs:
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           tf-summarize-version: v0.3.14
-      - name: Setup OpenTofu
+      - name: Setup Terragrunt and OpenTofu
         id: setup_opentofu
-        uses: opentofu/setup-opentofu@v1
+        uses: gruntwork-io/terragrunt-action@v3
         with:
           tofu_version: ${{ env.tofu_version }}
-          tofu_wrapper: false
-      - name: Setup Terragrunt v${{ env.tg_version }}
-        run: |
-          sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.tg_version }}/terragrunt_linux_amd64"
-          sudo chmod +x /bin/terragrunt
-          terragrunt -v
+          tg_version: ${{ env.tg_version }}
       - name: Terragrunt ${{ inputs.action }} ${{ inputs.working_directory }}
         id: apply
         env:
@@ -249,7 +244,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
         run: |
-          terragrunt --non-interactive run-all ${{ inputs.action == 'destroy' && 'apply' || inputs.action }} --out-dir ${{ github.workspace }}/${{ inputs.working_directory }}/.tfplans
+          terragrunt --non-interactive run --all ${{ inputs.action == 'destroy' && 'apply' || inputs.action }} --out-dir ${{ github.workspace }}/${{ inputs.working_directory }}/.tfplans
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           exit $exit_code
