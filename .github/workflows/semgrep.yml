@@ -15,7 +15,10 @@ on:
       - main
       - master
     paths:
-      - .cloudopsworks/workflows/semgrep.yml
+      - '**/*.hcl'
+      - '**/*.yaml'
+      - !.github/workflows/semgrep.yml
+      - !.cloudopsworks/boilerplate
   schedule:
     # random HH:MM to avoid a load spike on GitHub Actions at 00:00
     - cron: '25 1 * * *'
