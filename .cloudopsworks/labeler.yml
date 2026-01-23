@@ -19,7 +19,7 @@ size-XS:
   - any: [ 'inputs.yaml' ]
 
 size-S:
-  - any: [ '*-module.hcl', '**/inputs.yaml' ]
+  - any: [ '**/terragrunt.hcl', '**/inputs.yaml' ]
 
 size-XL:
   - any: [ 'root.hcl', '**/*.hcl', '!**/local-tags.yaml', '!*-module.tf' ]
