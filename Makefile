@@ -60,6 +60,7 @@ clean::
 ## Initialize the project with boilerplate
 init/project:: packages/install/boilerplate
 	@$(BOILERPLATE) --template-url .cloudopsworks/boilerplate/main --output-folder . $(USER_VARS) $(PARAMS1) $(PARAMS2) $(PARAMS3) $(PARAMS4) --var=iac_project=$(shell basename $$(pwd)) --disable-dependency-prompt
+	@terragrunt hcl format --exclude-dir .cloudopsworks
 
 ## Cleanup project boilerplate cache
 clean/project::
