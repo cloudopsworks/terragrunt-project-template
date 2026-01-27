@@ -38,7 +38,7 @@ jobs:
 
       - name: Pipeline Configuration
         id: config
-        uses: ./bp/ci/config
+        uses: ./bp/ci/config/terragrunt
 
       - uses: ./bp/cd/tasks/jira/release
         if: ${{ steps.config.outputs.jira_integration == 'true' && vars.JIRA_INTEGRATION_ENABLED == 'true' }}
