@@ -48,3 +48,10 @@ tfplan.tfplan
 .tronador
 .tronador*.mk
 tronador/
+
+# Local Generated Settings
+/settings.yaml
+/settings.json
+
+# MacOS
+.DS_Store
