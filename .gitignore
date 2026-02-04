@@ -48,3 +48,6 @@ tfplan.tfplan
 .tronador
 .tronador*.mk
 tronador/
+
+# MacOS DS_Store
+.DS_Store
