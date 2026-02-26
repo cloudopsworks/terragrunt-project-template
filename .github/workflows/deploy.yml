@@ -38,7 +38,7 @@ permissions:
   checks: write
 env:
   tofu_version: 1.11.4
-  tg_version: 0.98.0
+  tg_version: 0.99.4
 jobs:
   preload:
     outputs:
@@ -141,6 +141,9 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
           ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.DEPLOYMENT_GCP_CREDENTIALS }}
+          HOOP_API_KEY: ${{ secrets.HOOP_INTEGRATION_API_KEY }}
+          HOOP_API_URL: ${{ vars.HOOP_INTEGRATION_API_URL }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         shell: bash
@@ -158,6 +161,9 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
           ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.DEPLOYMENT_GCP_CREDENTIALS }}
+          HOOP_API_KEY: ${{ secrets.HOOP_INTEGRATION_API_KEY }}
+          HOOP_API_URL: ${{ vars.HOOP_INTEGRATION_API_URL }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
@@ -178,6 +184,9 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
           ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.DEPLOYMENT_GCP_CREDENTIALS }}
+          HOOP_API_KEY: ${{ secrets.HOOP_INTEGRATION_API_KEY }}
+          HOOP_API_URL: ${{ vars.HOOP_INTEGRATION_API_URL }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
@@ -240,6 +249,9 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.DEPLOYMENT_AZURE_SERVICE_SECRET }}
           ARM_TENANT_ID: ${{ secrets.DEPLOYMENT_AZURE_TENANT_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.DEPLOYMENT_GCP_CREDENTIALS }}
+          HOOP_API_KEY: ${{ secrets.HOOP_INTEGRATION_API_KEY }}
+          HOOP_API_URL: ${{ vars.HOOP_INTEGRATION_API_URL }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         working-directory: ${{ inputs.working_directory }}
