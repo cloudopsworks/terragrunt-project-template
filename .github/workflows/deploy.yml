@@ -200,7 +200,7 @@ jobs:
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           exit $exit_code
       - name: Upload Plan files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ contains(fromJSON('["apply", "destroy"]'), inputs.action) }}
         with:
           name: environment-release-plan
