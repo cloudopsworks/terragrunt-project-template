@@ -4,6 +4,32 @@ This document provides agentic guidelines for working with repositories created 
 
 ---
 
+## Environment Detection
+
+Before starting any task, detect the available tooling to choose the most efficient execution path.
+
+### MCP Servers
+
+Check whether any MCP (Model Context Protocol) servers are available in the current session. MCP servers may expose tools for GitHub, Jira, git operations, or IDE integration that can replace manual CLI steps.
+
+- If a **GitHub MCP** is available (e.g., tools named `github_*`, `create_pull_request`, `mcp__github__*`): use it to create pull requests, list branches, fetch repository metadata, and manage issues — do not fall back to `gh` CLI unless the MCP call fails.
+- If a **Jira MCP** is available: use it to link PRs to tickets and update issue status instead of relying on the `inputs-jira.yaml` workflow trigger alone.
+- If any other MCP server is available, inspect its exposed tools and prefer them over equivalent shell commands where they reduce ambiguity or improve reliability.
+
+### IDE Integration
+
+Check whether the agent is running inside an IDE with active integrations (e.g., JetBrains, VS Code, Cursor):
+
+- If **IDE MCP tools** are available (e.g., `mcp__webstorm__*`, `mcp__vscode__*`): use them for file operations, terminal commands, and project navigation in preference to raw shell calls.
+- If an IDE terminal tool is available, prefer it over the generic Bash tool for running `make` targets, as it inherits the project's environment automatically.
+- If IDE Git tools are available, use them to stage, diff, and commit files.
+
+### Fallback
+
+If no MCP servers or IDE integrations are detected, use standard CLI tools: `gh` for GitHub operations, `git` for version control, `make` for build targets.
+
+---
+
 ## 1. Handling a Freshly Created Repository from This Template
 
 ### What this repository is
