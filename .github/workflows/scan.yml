@@ -19,9 +19,6 @@ on:
       - '**/*.yaml'
       - '!.github/workflows/semgrep.yml'
       - '!.cloudopsworks/boilerplate'
-  schedule:
-    # random HH:MM to avoid a load spike on GitHub Actions at 00:00
-    - cron: '25 1 * * *'
 jobs:
   semgrep:
     name: semgrep/ci
@@ -34,3 +31,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: semgrep ci
+
+  secrets-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      - name: Checkout w/Blueprint
+        uses: cloudopsworks/blueprints/cd/checkout@v5.10
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          source_ref: ${{ github.base_ref }}
+          blueprint_ref: 'v5.10'
+
+      - name: Run Secret Scanning
+        id: secrets
+        uses: ./bp/ci/scan/secrets
+
