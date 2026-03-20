@@ -1,5 +1,5 @@
 ##
-# (c) 2021-2025
+# (c) 2021-2026
 #     Cloud Ops Works LLC - https://cloudops.works/
 #     Find us on:
 #       GitHub: https://github.com/cloudopsworks
@@ -39,19 +39,19 @@ env:
 jobs:
   preload:
     outputs:
-      runner_set: ${{ steps.runner_set.outputs.result }}
+      runner_set: ${{ steps.config.outputs.runner_set }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout w/Blueprint
+        uses: cloudopsworks/blueprints/cd/checkout@v5.10
         with:
           token: ${{ secrets.BOT_TOKEN }}
-          fetch-depth: 0
+          source_ref: ${{ github.base_ref }}
+          blueprint_ref: 'v5.10'
 
-      - name: Get runnerset with yq from global-inputs.yaml
-        id: runner_set
-        uses: mikefarah/yq@master
-        with:
-          cmd: yq '.runner_set // "ubuntu-latest"' ./global-inputs.yaml
+      - name: Pipeline Configuration
+        id: config
+        uses: ./bp/ci/config/terragrunt
 
   plan:
     needs:
@@ -63,11 +63,7 @@ jobs:
       # Get the owner repo
       - name: Get owner
         id: getowner
-        run: |
-          repo_owner=`echo "$GITHUB_REPOSITORY" | cut -f 1 -d "/"`
-          repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
-          echo "owner=$repo_owner" >> $GITHUB_OUTPUT
-          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
+        uses: cloudopsworks/blueprints/ci/common/getowner@v5.10
 
       - uses: actions/checkout@v6
         with:
