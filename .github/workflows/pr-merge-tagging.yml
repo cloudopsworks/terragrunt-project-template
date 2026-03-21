@@ -71,7 +71,7 @@ jobs:
           make gitflow/version/publish
 
   branch_deletion:
-    if: always()
+    if: (! failure())
     needs:
       - push_tag
       - pre_validate
