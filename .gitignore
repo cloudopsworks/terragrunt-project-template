@@ -55,3 +55,7 @@ tronador/
 
 # MacOS
 .DS_Store
+
+# AI excludes
+.claude/
+.ai/
