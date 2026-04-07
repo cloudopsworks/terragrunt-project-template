@@ -30,7 +30,7 @@ variables:
     order: 3
     description: "Google Cloud Project ID, this is required and should be accurate"
     type: string
-    default: "{{ .org_project_id }}"
+    default: "{{ "{{" }} .org_project_id {{ "}}" }}"
   - name: default_google_region
     order: 4
     description: "Default Google Cloud Region"

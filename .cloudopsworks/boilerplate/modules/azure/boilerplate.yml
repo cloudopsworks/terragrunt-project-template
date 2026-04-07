@@ -38,7 +38,7 @@ variables:
     order: 5
     description: "Terraform State Subscription ID"
     type: string
-    default: "{{ .default_subscription_id }}"
+    default: "{{ "{{" }} .default_subscription_id {{ "}}" }}"
   - name: terraform_state_resource_group_name
     order: 6
     description: "Terraform State Resource Group Name"
@@ -58,7 +58,7 @@ variables:
     order: 9
     description: "Terraform State Tenant ID"
     type: string
-    default: "{{ .tenant_id }}"
+    default: "{{ "{{" }} .tenant_id {{ "}}" }}"
 
   - name: mongodb_secret_keyvault_name
     order: 10
