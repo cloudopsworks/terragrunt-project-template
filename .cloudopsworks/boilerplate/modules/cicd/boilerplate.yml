@@ -15,6 +15,7 @@ variables:
       - "admin"
       - "cloudopsworks"
       - "cloudopsworks-bot"
+    confirm: true
   - name: required_reviewers
     order: 1
     description: "Number of required reviewers for Pull Requests"
@@ -27,33 +28,39 @@ variables:
     default:
       - "cloudopsworks/dev-ops"
       - "admin"
+    confirm: true
   - name: admin_contributors
     order: 3
     description: "Contributors with Admin rights on Repository"
     type: list
     default:
       - "cloudopsworks/dev-ops"
+    confirm: true
   - name: triage_contributors
     order: 4
     description: "Contributors with Triage rights on Repository"
     type: list
     default: []
+    confirm: true
   - name: maintain_contributors
     order: 5
     description: "Contributors with Maintain rights on Repository"
     type: list
     default: []
+    confirm: true
   - name: push_contributors
     order: 6
     description: "Contributors with Push rights on Repository"
     type: list
     default:
       - "cloudopsworks/dev-ops"
+    confirm: true
   - name: pull_contributors
     order: 7
     description: "Contributors with Pull only rights on Repository, if it is in this list cannot push in any way."
     type: list
     default: []
+    confirm: true
 
 partials:
   - ../../parts/*.hcl

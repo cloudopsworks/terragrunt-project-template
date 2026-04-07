@@ -16,3 +16,11 @@ mongodb_secret_sts_endpoint: {{ .mongodb_secret_sts_endpoint | quote }}
 runner_set_enabled: {{ .runner_set_enabled }}
 runner_set_name: {{ .runner_set_name | quote }}
 {{- end }}
+{{- if .openai }}
+openai_secret_sts_role_arn: {{ .openai_secret_sts_role_arn | quote }}
+openai_secret_region: {{ .openai_secret_region | quote }}
+openai_secret_name: {{ .openai_secret_name | quote }}
+openai_secret_sts_endpoint: {{ .openai_secret_sts_endpoint | quote }}
+openai_secret_key: {{ .openai_secret_key | quote }}
+openai_organization_id: {{ .openai_organization_id | quote }}
+{{- end }}

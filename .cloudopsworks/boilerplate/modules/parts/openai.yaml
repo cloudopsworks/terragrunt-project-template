@@ -1,0 +1,11 @@
+{{- define "openai" }}
+# OpenAI Organization related inputs
+openai:
+  secrets:
+    sts_role_arn: {{ .openai_secret_sts_role_arn | quote }}
+    region: {{ .openai_secret_region | quote }}
+    name: {{ .openai_secret_name | quote }}
+    sts_endpoint: {{ .openai_secret_sts_endpoint | quote }}
+    secret_key: {{ .openai_secret_key | quote }}
+  organization_id: {{ .openai_organization_id | quote }}
+{{- end }}

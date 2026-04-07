@@ -90,7 +90,7 @@ Edit `.cloudopsworks/cloudopsworks-ci.yaml` to match the project's governance re
 config:
   branchProtection: true
   gitFlow:
-    enabled: true
+    enabled: false
     supportBranches: false
   protectedSources:
     - "*.tf"
@@ -115,17 +115,13 @@ config:
 cd:
   automatic: false
   deployments:
-    develop:
-      env: dev
-    release:
+    master:
       env: production
-    test:
-      env: test
-    prerelease:
-      env: uat
 ```
 
-Adjust `reviewers`, `owners`, `requiredReviewers`, and CD deployment mappings as needed.
+This project uses **GitHub Flow**: `master` is always the deployable branch. All changes flow through short-lived feature or fix branches that merge directly into `master` via pull request.
+
+Adjust `reviewers`, `owners`, and `requiredReviewers` as needed.
 
 #### Step 4: Add infrastructure modules
 

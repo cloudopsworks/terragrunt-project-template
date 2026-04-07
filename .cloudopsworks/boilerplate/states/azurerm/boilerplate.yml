@@ -32,8 +32,12 @@ variables:
     description: "Use azure MSI to access terraform state"
     type: bool
     default: true
+    validate:
+      - required
   - name: terraform_state_use_azuread
     order: 7
     description: "Use azuread authentication to access terraform state"
     type: bool
     default: false
+    validate:
+      - required
