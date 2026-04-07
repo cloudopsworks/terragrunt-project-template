@@ -65,6 +65,12 @@ variables:
       - gcs
       - azurerm
 
+  - name: openai
+    order: 10
+    description: "Enable OpenAI ChatGPT Provider support"
+    type: bool
+    default: false
+
 dependencies:
   - name: aws_config
     template-url: ../modules/aws

@@ -11,6 +11,10 @@ variables:
     description: "MongoDB Atlas Support"
     type: bool
     default: false
+  - name: openai
+    description: "OpenAI Provider Support"
+    type: bool
+    default: false
   - name: organization_enabled
     order: 0
     description: "Enable Organization Support"
@@ -39,7 +43,7 @@ variables:
     order: 5
     description: "Default AWS STS Role ARN"
     type: string
-    default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
+    default: "arn:aws:iam::{{ .account_id }}:role/terraform-access-role"
   - name: terraform_group_name
     order: 6
     description: "Terraform Group Name within Organization's AWS IAM"
@@ -50,7 +54,7 @@ variables:
     order: 7
     description: "(optional) MongoDB Atlas Provider Secret STS Role ARN, is required if indicated MongoDB Atlas Support=true"
     type: string
-    default: "arn:aws:iam::{{ .account_id }}:role/TerraformAccessRole"
+    default: "arn:aws:iam::{{ .account_id }}:role/terraform-access-role"
   - name: mongodb_secret_region
     order: 8
     description: "(optional) MongoDB Atlas Provider Secret Region, is required if indicated MongoDB Atlas Support=true"
@@ -71,6 +75,31 @@ variables:
     description: "(optional) Enable Assume Role on Root Module."
     type: bool
     default: false
+
+  - name: openai_secret_sts_role_arn
+    order: 12
+    description: "(optional) OpenAI Provider Secret STS Role ARN, is required if indicated OpenAI Support=true"
+    type: string
+    default: "arn:aws:iam::{{ .account_id }}:role/terraform-access-role"
+  - name: openai_secret_region
+    order: 13
+    description: "(optional) OpenAI Provider Secret Region, is required if indicated OpenAI Support=true"
+    default: "{{ .default_aws_region }}"
+  - name: openai_secret_name
+    order: 14
+    description: "(optional) OpenAI Provider Secret Name, is required if indicated OpenAI Support=true"
+    type: string
+    default: "/secrets/openai-admin-prod"
+  - name: openai_secret_sts_endpoint
+    order: 15
+    description: "(optional) OpenAI Provider Secret STS Endpoint, is required if indicated OpenAI Support=true"
+    type: string
+    default: "https://sts.{{ .openai_secret_region }}.amazonaws.com"
+  - name: openai_secret_secret_key
+    order: 16
+    description: "(optional) OpenAI Provider Secret Secret Key, is required if indicated OpenAI Support=true"
+    type: string
+    default: "admin_api_key"
 
 partials:
   - ../../parts/*.hcl

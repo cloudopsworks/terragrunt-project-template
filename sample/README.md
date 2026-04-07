@@ -21,7 +21,7 @@ Root folder has 3 templates:
     ```yaml
     default:
       region: <AWS_REGION>
-      sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/TerraformAccessRole
+      sts_role_arn: arn:aws:iam::<ACCOUNT_ID>:role/terraform-access-role
     ```
 - **global-tags.json_template**:
   - These tags defined in this JSON will be injected on all resources being created

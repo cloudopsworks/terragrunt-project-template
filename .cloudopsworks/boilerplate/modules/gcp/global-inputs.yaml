@@ -20,6 +20,14 @@ organization:
 {{ template "mongodb_atlas" . }}
 {{- end }}
 
+{{- if .openai }}
+{{ template "openai" . }}
+{{- end }}
+
+{{- if .hoop }}
+{{ template "hoop" . }}
+{{- end }}
+
 # Required
 project:
   id: {{ .project_id | quote }}
