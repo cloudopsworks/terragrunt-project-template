@@ -1,2 +1,2 @@
-{{ define "hoop" }}
-{{ end }}
+{{- define "hoop" }}
+{{- end }}
