@@ -17,7 +17,7 @@ variables:
     type: bool
     default: false
     confirm: true
-    validate:
+    validations:
       - required
   - name: organization_id
     order: 1
@@ -25,7 +25,7 @@ variables:
     type: string
     default: ""
     confirm: true
-    validate:
+    validations:
       - required
   - name: org_project_id
     order: 2
@@ -39,14 +39,14 @@ variables:
     type: string
     default: "{{ .org_project_id }}"
     confirm: true
-    validate:
+    validations:
       - required
   - name: default_google_region
     order: 4
     description: "Default Google Cloud Region"
     default: "us-central1"
     confirm: true
-    validate:
+    validations:
       - required
   - name: default_impersonate_sa
     order: 5
@@ -54,7 +54,7 @@ variables:
     type: string
     default: "terraform@{{ .project_id }}.iam.gserviceaccount.com"
     confirm: true
-    validate:
+    validations:
       - required
 
 partials:
