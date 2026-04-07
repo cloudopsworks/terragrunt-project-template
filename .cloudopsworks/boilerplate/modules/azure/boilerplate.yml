@@ -19,7 +19,7 @@ variables:
     type: string
     default: ""
     confirm: true
-    validate:
+    validations:
       - required
   - name: default_subscription_id
     order: 2
@@ -27,14 +27,14 @@ variables:
     type: string
     default: ""
     confirm: true
-    validate:
+    validations:
       - required
   - name: use_msi
     order: 3
     description: "Use Managed Service Identity"
     type: bool
     default: false
-    validate:
+    validations:
       - required
   - name: resource_provider_registrations
     order: 4
@@ -42,7 +42,7 @@ variables:
     type: string
     default: false
     confirm: true
-    validate:
+    validations:
       - required
 
   - name: terraform_state_subscription_id
@@ -51,7 +51,7 @@ variables:
     type: string
     default: "{{ .default_subscription_id }}"
     confirm: true
-    validate:
+    validations:
       - required
   - name: terraform_state_resource_group_name
     order: 6
@@ -59,7 +59,7 @@ variables:
     type: string
     default: "terraform-state"
     confirm: true
-    validate:
+    validations:
       - required
   - name: terraform_state_storage_account_name
     order: 7
@@ -67,7 +67,7 @@ variables:
     type: string
     default: "terraformstate"
     confirm: true
-    validate:
+    validations:
       - required
   - name: terraform_state_container_name
     order: 8
@@ -75,7 +75,7 @@ variables:
     type: string
     default: "terraform-state"
     confirm: true
-    validate:
+    validations:
       - required
   - name: terraform_state_tenant_id
     order: 9
@@ -83,7 +83,7 @@ variables:
     type: string
     default: "{{ .tenant_id }}"
     confirm: true
-    validate:
+    validations:
       - required
 
   - name: mongodb_secret_keyvault_name
@@ -92,7 +92,7 @@ variables:
     type: string
     default: "secret_kv"
     confirm: true
-    validate:
+    validations:
       - required
   - name: mongodb_secret_keyvault_resourcegroup_name
     order: 11
@@ -100,7 +100,7 @@ variables:
     type: string
     default: "secret_rg"
     confirm: true
-    validate:
+    validations:
       - required
   - name: mongodb_secret_name_filter
     order: 12
@@ -108,7 +108,7 @@ variables:
     type: string
     default: "mongodb-atlas-admin-"
     confirm: true
-    validate:
+    validations:
       - required
 
 partials:

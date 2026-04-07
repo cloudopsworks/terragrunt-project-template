@@ -22,7 +22,7 @@ variables:
     description: "MongoDB Atlas Support"
     type: bool
     confirm: true
-    validate:
+    validations:
       - required
 
   - name: maintainer_id
@@ -31,7 +31,7 @@ variables:
     type: string
     default: "author"
     confirm: true
-    validate:
+    validations:
       - required
   - name: maintainer_email
     order: 3
@@ -39,7 +39,7 @@ variables:
     type: string
     default: "author@sample.com"
     confirm: true
-    validate:
+    validations:
       - required
   - name: zone_ownership_by
     order: 4
@@ -51,7 +51,7 @@ variables:
     description: "Zone Managed By, recommended values: owned,shared,(Git account)"
     default: "owned"
     confirm: true
-    validate:
+    validations:
       - required
   - name: iac_project
     order: 6
@@ -65,7 +65,7 @@ variables:
     type: bool
     default: false
     confirm: true
-    validate:
+    validations:
       - required
   - name: runner_set_name
     order: 8
@@ -83,7 +83,7 @@ variables:
       - gcs
       - azurerm
     confirm: true
-    validate:
+    validations:
       - required
 
   - name: openai
