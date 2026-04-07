@@ -6,6 +6,6 @@ openai:
     region: {{ .openai_secret_region | quote }}
     name: {{ .openai_secret_name | quote }}
     sts_endpoint: {{ .openai_secret_sts_endpoint | quote }}
-    secret_key: {{ .openai_secret_secret_key | quote }}
+    secret_key: {{ .openai_secret_key | quote }}
   organization_id: {{ .openai_organization_id | quote }}
 {{ end }}

@@ -15,3 +15,5 @@ variables:
     order: 2
     description: "Terraform State KMS Encryption Key, if not set, no encryption will be used (not recommended)"
     default: ""
+    validate:
+      - required

@@ -16,10 +16,14 @@ variables:
     description: "Terraform State Region Location"
     type: string
     default: "us-east-1"
+    validate:
+      - required
   - name: terraform_state_kms_key_id
     order: 3
     description: "Terraform State KMS Key ID, if not set, no encryption will be used (not recommended)"
     default: ""
+    validate:
+      - required
   - name: terraform_state_dynamodb_table
     order: 4
     description: "Terraform State DynamoDB Table"
