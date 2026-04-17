@@ -150,10 +150,21 @@ make clean   # Removes .terragrunt-cache and plan artifacts before committing
 
 #### Step 6: Initial commit workflow
 
-1. Commit all generated and authored files on the `develop` branch.
-2. Open a PR from `develop` → `master`.
-3. The CI plan workflow will run automatically on the PR.
-4. After approval and merge, the CD workflow can deploy to target environments.
+1. Create a feature branch for the initial setup:
+   ```sh
+   make gitflow/feature/start-no-develop:initial-project-setup
+   ```
+2. Commit all generated and authored files on that branch.
+3. Publish the branch to the remote (sets upstream tracking):
+   ```sh
+   make gitflow/feature/publish
+   ```
+4. Open a PR targeting `master`:
+   ```sh
+   make gitflow/feature/finish-no-develop
+   ```
+5. The CI plan workflow will run automatically on the PR.
+6. After approval and merge, the CD workflow can deploy to target environments.
 
 ---
 
@@ -235,7 +246,11 @@ Carefully diff the regenerated files against previous versions. The boilerplate 
 - Add new keys to `global-inputs.yaml`
 - Update provider version constraints
 
-Merge any project-specific customizations that were present in the old versions of these files back into the newly generated ones.
+Merge any project-specific customizations that were present in the old versions of these files back into the newly generated ones. After merging customizations, re-format any changed HCL files:
+
+```sh
+terragrunt hcl format --working-dir . --exclude-dir .cloudopsworks
+```
 
 #### Step 4: Validate
 
@@ -248,26 +263,56 @@ make clean   # Clears caches and plan artifacts
 
 Stage and commit only files outside the protected paths. Do not commit changes to `.github/`, `.cloudopsworks/boilerplate/`, `.cloudopsworks/hooks/`, `.cloudopsworks/_VERSION`, `.cloudopsworks/LICENSE`, or `.cloudopsworks/labeler.yml` unless they arrived directly from the upstream merge and are unmodified.
 
+After opening the PR, wait for all CI checks to pass before merging:
+
+```sh
+gh pr checks <PR_NUMBER> --watch
+```
+
 ### Branch and Pull Request Procedure
 
-#### Branch naming
+#### General Rules
 
-All changes — including upgrade follow-up work — must be made on a dedicated branch, never directly on `master` or `develop`:
+- **Never push directly to `master`**. All changes must flow through feature or hotfix branches merged via pull request.
+- Branches must be created before any change is committed.
+- Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all project version tags — GitVersion derives these automatically from commit message annotations.
+- GitHub Flow is the branching model: all branches are created from `master` and merged back into `master`. There is no `develop` branch in this project.
+- Always use `make gitflow/*` targets for branch operations — never raw `git checkout -b` or `git push -u origin`. These targets handle dependency checks, naming conventions, and upstream tracking automatically.
+- Plan consistently and thoroughly before starting any work.
+- Use `gh` CLI for PR management. When waiting for CI checks to pass, use `gh pr checks <PR_NUMBER> --watch`.
 
-```
-feature/<short-description>   # New infrastructure modules or capabilities
-fix/<short-description>        # Bug fixes, corrections, configuration repairs
-```
+#### Branch naming and creation
 
-Examples:
-```sh
-git checkout -b feature/add-spoke-vpc-dev
-git checkout -b fix/missing-assume-role-arn
-```
+All changes must be made on a dedicated branch, never directly on `master`. Use the `make gitflow/*` targets — never raw `git checkout -b`.
 
-#### Opening a pull request
+| Branch type | Creation command | When to use | Semver impact |
+|---|---|---|---|
+| `feature/<name>` | `make gitflow/feature/start-no-develop:<name>` | New infra modules, provider upgrades, new environments | MINOR or MAJOR |
+| `hotfix/<version>` | `make gitflow/hotfix/start` (auto-named by GitVersion) | Config corrections, module `?ref=` bumps, CI repairs, doc fixes | PATCH |
 
-After committing changes to the feature or fix branch, open a pull request targeting `master`. Use the following format for the PR body:
+> `make gitflow/hotfix/start` automatically computes the branch name as `hotfix/<next-patch-version>` using GitVersion — do not choose the name manually.
+
+#### Publishing branches
+
+After committing changes locally, publish the branch to establish upstream tracking. Never use `git push -u origin` directly.
+
+| Branch type | Publish command |
+|---|---|
+| `feature/` | `make gitflow/feature/publish` |
+| `hotfix/` | `make gitflow/hotfix/publish` |
+
+#### Opening a pull request via finish targets
+
+Use the finish targets to create PRs. These targets verify the branch is in sync with remote before creating the PR — always publish first.
+
+| Branch type | PR creation command |
+|---|---|
+| `feature/` | `make gitflow/feature/finish-no-develop` |
+| `hotfix/` | `make gitflow/hotfix/finish` |
+
+#### PR body format
+
+Use the following format for the PR body. The `+semver:` annotation in the body is required — GitVersion reads it from the merge commit message to determine the next version.
 
 ```markdown
 ## Summary
@@ -278,12 +323,17 @@ After committing changes to the feature or fix branch, open a pull request targe
 - <Main change 2>
 - <Main change 3>
 
++semver: <major|minor|patch|fix>
+
 ## Checklist
+- [ ] HCL formatted (`terragrunt hcl format --working-dir <path> --exclude-dir .cloudopsworks`)
 - [ ] `make lint` passes with no errors
 - [ ] `make clean` run before committing (no cache artifacts staged)
+- [ ] `+semver:` annotation included in PR body matching expected version impact
 - [ ] No protected files modified (`.cloudopsworks/boilerplate/`, `.cloudopsworks/hooks/`, `.cloudopsworks/_VERSION`, `.cloudopsworks/LICENSE`, `.cloudopsworks/labeler.yml`, `.github/`)
 - [ ] No boilerplate-generated files modified directly (`root.hcl`, `global-inputs.yaml`, `.inputs`, `.inputs_mod`, `.cloudopsworks/.inputs_cicd`)
 - [ ] Changes reviewed for correctness in the target environment(s)
+- [ ] CI plan output reviewed before merging
 ```
 
 The CI plan workflow will run automatically against the PR. Do not merge until the plan output has been reviewed and approved by the required reviewers defined in `.cloudopsworks/cloudopsworks-ci.yaml`.
@@ -292,9 +342,26 @@ The CI plan workflow will run automatically against the PR. Do not merge until t
 
 The `.cloudopsworks/hooks/module_versions.sh` hook runs automatically in CI to detect outdated `?ref=` version pins in `terragrunt.hcl` files. When modules are flagged as outdated:
 
-1. Open the relevant `terragrunt.hcl` file.
-2. Update the `source` URL's `?ref=` value to the recommended version shown in the CI warning.
-3. Do not modify the hook script itself.
+1. Start a hotfix branch:
+   ```sh
+   make gitflow/hotfix/start
+   ```
+2. Open the relevant `terragrunt.hcl` file and update the `source` URL's `?ref=` value to the recommended version shown in the CI warning.
+3. Format the changed file:
+   ```sh
+   terragrunt hcl format --working-dir <directory-containing-the-terragrunt.hcl>
+   ```
+4. Commit with a patch annotation:
+   ```sh
+   git add <file>
+   git commit -m "chore: bump <module> ref to <version> +semver: patch"
+   ```
+5. Publish and open the PR:
+   ```sh
+   make gitflow/hotfix/publish
+   make gitflow/hotfix/finish
+   ```
+6. Do not modify the hook script itself.
 
 ### CI/CD Governance Updates
 
@@ -303,3 +370,120 @@ When CI/CD settings need to change (new environments, reviewer changes, runner c
 1. Edit `.cloudopsworks/cloudopsworks-ci.yaml` only.
 2. Do not edit `.github/workflows/` files directly.
 3. Commit the change and let the repository governance automation pick it up.
+
+---
+
+## 3. Versioning and Release Management
+
+### Semver Commit Annotations
+
+The project uses GitVersion with commit message parsing. Include a `+semver:` annotation in every commit message and in the PR description body — GitVersion reads it from the merge commit to determine the next version tag.
+
+| Change type | Annotation |
+|---|---|
+| Breaking / incompatible change | `+semver: major` |
+| New feature or minor upgrade | `+semver: minor` or `+semver: feature` or `+semver: breaking` |
+| Fix, patch, or hotfix | `+semver: fix` or `+semver: patch` or `+semver: hotfix` |
+| Skip version bump | `+semver: none` or `+semver: skip` |
+
+Example commit messages:
+```
+feat: add spoke VPC module for dev environment +semver: minor
+fix: correct assume-role ARN in root.hcl +semver: fix
+chore: bump vpc module ?ref= to v3.2.1 +semver: patch
+refactor!: replace s3 backend with azurerm +semver: major
+```
+
+### Change Type Summary Table
+
+| Change type | Branch type | Semver impact | Annotation |
+|---|---|---|---|
+| New infrastructure module | `feature/` | MINOR | `+semver: feature` |
+| New environment or account | `feature/` | MINOR | `+semver: minor` |
+| Provider version upgrade (breaking) | `feature/` | MAJOR | `+semver: breaking` |
+| Provider version upgrade (compatible) | `feature/` | MINOR | `+semver: minor` |
+| Bug fix / broken configuration | `hotfix/` | PATCH | `+semver: fix` |
+| Module `?ref=` version pin update | `hotfix/` | PATCH | `+semver: patch` |
+| CI/CD governance update (`cloudopsworks-ci.yaml`) | `hotfix/` | PATCH | `+semver: patch` |
+| Template upgrade follow-up (`make repos/upgrade`) | `hotfix/` | PATCH | `+semver: patch` |
+| HCL formatting correction only | `hotfix/` | PATCH | `+semver: patch` |
+
+### Feature Branch Workflow (MINOR / MAJOR changes)
+
+```sh
+# 1. Start branch from master
+make gitflow/feature/start-no-develop:<feature-name>
+
+# 2. Implement changes, then format any changed HCL files
+#    Scoped to a specific module directory:
+terragrunt hcl format --working-dir <path/to/module>
+#    Or from the project root (all files, excluding .cloudopsworks):
+terragrunt hcl format --working-dir . --exclude-dir .cloudopsworks
+
+# 3. Validate
+make lint
+
+# 4. Commit with semver annotation
+git add <specific files>
+git commit -m "feat: <description> +semver: minor"
+
+# 5. Publish branch (sets upstream tracking)
+make gitflow/feature/publish
+
+# 6. Open PR against master
+make gitflow/feature/finish-no-develop
+
+# 7. Wait for CI checks
+gh pr checks <PR_NUMBER> --watch
+```
+
+### Hotfix Branch Workflow (PATCH changes)
+
+```sh
+# 1. Start hotfix branch (auto-named hotfix/<next-patch-version> by GitVersion)
+make gitflow/hotfix/start
+
+# 2. Apply fix, then format if HCL was changed
+#    Scoped to the changed directory:
+terragrunt hcl format --working-dir <path/to/changed/module>
+#    Or from the project root:
+terragrunt hcl format --working-dir . --exclude-dir .cloudopsworks
+
+# 3. Validate
+make lint
+
+# 4. Commit with semver annotation
+git add <specific files>
+git commit -m "fix: <description> +semver: patch"
+
+# 5. Publish branch (sets upstream tracking)
+make gitflow/hotfix/publish
+
+# 6. Open PR against master
+make gitflow/hotfix/finish
+
+# 7. Wait for CI checks
+gh pr checks <PR_NUMBER> --watch
+```
+
+### PR Merge Guidelines
+
+After all CI checks pass and reviewers have approved, merge using `gh pr merge` with a proper merge commit:
+
+```sh
+gh pr merge <PR_NUMBER> --repo <owner/repo> --merge \
+  --subject "chore: merge <branch> - <short description> +semver: <level>" \
+  --body "$(cat <<'EOF'
+## Summary
+
+- Bullet point summary of changes
+
++semver: <level>
+EOF
+)"
+```
+
+Key rules:
+- Always use `--merge` (never `--squash` or `--rebase`) — GitVersion requires the full merge commit history to read semver annotations correctly.
+- Include `+semver: <level>` in the **body**, not just the subject line.
+- After merge, update your local master: `git checkout master && git pull origin master`.
