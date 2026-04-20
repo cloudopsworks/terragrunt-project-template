@@ -153,7 +153,6 @@ variables:
     default: "admin_api_key"
     confirm: true
     validations:
-      - length(5)
       - alphanumeric
       - required
   - name: openai_organization_id
