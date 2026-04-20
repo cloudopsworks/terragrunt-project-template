@@ -121,46 +121,34 @@ variables:
     type: string
     default: "arn:aws:iam::{{ .org_account_id }}:role/terraform-access-role"
     confirm: true
-    validations:
-      - required
   - name: openai_secret_region
     order: 13
     description: "(optional) OpenAI Provider Secret Region, is required if indicated OpenAI Support=true"
     default: "{{ .default_aws_region }}"
     confirm: true
-    validations:
-      - required
   - name: openai_secret_name
     order: 14
     description: "(optional) OpenAI Provider Secret Name, is required if indicated OpenAI Support=true"
     type: string
     default: "/secrets/openai-admin-prod"
     confirm: true
-    validations:
-      - required
   - name: openai_secret_sts_endpoint
     order: 15
     description: "(optional) OpenAI Provider Secret STS Endpoint, is required if indicated OpenAI Support=true"
     type: string
     default: "https://sts.{{ .openai_secret_region }}.amazonaws.com"
     confirm: true
-    validations:
-      - required
   - name: openai_secret_key
     order: 16
     description: "(optional) OpenAI Provider Secret Secret Key, is required if indicated OpenAI Support=true"
     type: string
     default: "admin_api_key"
     confirm: true
-    validations:
-      - alphanumeric
-      - required
   - name: openai_organization_id
     order: 17
     description: "(optional) OpenAI Provider Organization ID, is required if indicated OpenAI Support=true"
     type: string
-    validations:
-      - required
+    default: ""
 
 partials:
   - ../../parts/*.hcl
