@@ -271,6 +271,8 @@ gh pr checks <PR_NUMBER> --watch
 
 ### Branch and Pull Request Procedure
 
+There is a skill related to this template module and their implementations, it can be found in the [Claude Code Skills - cw-release](https://github.com/cloudopsworks/claude-code-skills/tree/main/cw-release) can be used in any agent anyway, install and use it.
+
 #### General Rules
 
 - **Never push directly to `master`**. All changes must flow through feature or hotfix branches merged via pull request.
