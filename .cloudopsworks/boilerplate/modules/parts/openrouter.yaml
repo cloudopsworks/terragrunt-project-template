@@ -1,0 +1,10 @@
+{{- define "openrouter" }}
+# OpenRouter Organization related inputs
+openrouter:
+  secrets:
+    sts_role_arn: {{ .openrouter_secret_sts_role_arn | quote }}
+    region: {{ .openrouter_secret_region | quote }}
+    name: {{ .openrouter_secret_name | quote }}
+    sts_endpoint: {{ .openrouter_secret_sts_endpoint | quote }}
+    secret_key: {{ .openrouter_secret_key | quote }}
+{{- end }}

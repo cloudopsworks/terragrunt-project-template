@@ -15,6 +15,10 @@ variables:
     description: "OpenAI Provider Support"
     type: bool
     default: false
+  - name: openrouter
+    description: "OpenRouter Provider Support"
+    type: bool
+    default: false
   - name: hoop
     description: "Hoop Provider Support"
     type: bool
@@ -149,6 +153,36 @@ variables:
     description: "(optional) OpenAI Provider Organization ID, is required if indicated OpenAI Support=true"
     type: string
     default: ""
+
+  - name: openrouter_secret_sts_role_arn
+    order: 18
+    description: "(optional) OpenRouter Provider Secret STS Role ARN, is required if indicated OpenRouter Support=true"
+    type: string
+    default: "arn:aws:iam::{{ .org_account_id }}:role/terraform-access-role"
+    confirm: true
+  - name: openrouter_secret_region
+    order: 19
+    description: "(optional) OpenRouter Provider Secret Region, is required if indicated OpenRouter Support=true"
+    default: "{{ .default_aws_region }}"
+    confirm: true
+  - name: openrouter_secret_name
+    order: 20
+    description: "(optional) OpenRouter Provider Secret Name, is required if indicated OpenRouter Support=true"
+    type: string
+    default: "/secrets/openrouter-admin-prod"
+    confirm: true
+  - name: openrouter_secret_sts_endpoint
+    order: 21
+    description: "(optional) OpenRouter Provider Secret STS Endpoint, is required if indicated OpenRouter Support=true"
+    type: string
+    default: "https://sts.{{ .openrouter_secret_region }}.amazonaws.com"
+    confirm: true
+  - name: openrouter_secret_key
+    order: 22
+    description: "(optional) OpenRouter Provider Secret Secret Key, is required if indicated OpenRouter Support=true"
+    type: string
+    default: "api_key"
+    confirm: true
 
 partials:
   - ../../parts/*.hcl
