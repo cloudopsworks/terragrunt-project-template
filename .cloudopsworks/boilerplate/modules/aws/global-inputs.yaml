@@ -23,6 +23,9 @@ organization:
 {{- if .openai }}
 {{ template "openai" . }}
 {{- end }}
+{{- if .openrouter }}
+{{ template "openrouter" . }}
+{{- end }}
 {{- if .hoop }}
 {{ template "hoop" . }}
 {{- end }}

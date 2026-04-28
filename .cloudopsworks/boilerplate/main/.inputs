@@ -1,6 +1,7 @@
 target_cloud: {{ .target_cloud }}
 mongodb: {{ .mongodb }}
 openai: {{ .openai }}
+openrouter: {{ .openrouter }}
 hoop: {{ .hoop }}
 maintainer_id: {{ .maintainer_id }}
 maintainer_email: {{ .maintainer_email }}

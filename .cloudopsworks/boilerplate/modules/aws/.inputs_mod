@@ -24,3 +24,10 @@ openai_secret_sts_endpoint: {{ .openai_secret_sts_endpoint | quote }}
 openai_secret_key: {{ .openai_secret_key | quote }}
 openai_organization_id: {{ .openai_organization_id | quote }}
 {{- end }}
+{{- if .openrouter }}
+openrouter_secret_sts_role_arn: {{ .openrouter_secret_sts_role_arn | quote }}
+openrouter_secret_region: {{ .openrouter_secret_region | quote }}
+openrouter_secret_name: {{ .openrouter_secret_name | quote }}
+openrouter_secret_sts_endpoint: {{ .openrouter_secret_sts_endpoint | quote }}
+openrouter_secret_key: {{ .openrouter_secret_key | quote }}
+{{- end }}

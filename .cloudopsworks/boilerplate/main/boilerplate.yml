@@ -100,6 +100,13 @@ variables:
     type: bool
     confirm: true
 
+  - name: openrouter
+    order: 12
+    description: "Enable OpenRouter AI Provider support"
+    type: bool
+    default: false
+    confirm: true
+
 dependencies:
   - name: aws_config
     template-url: ../modules/aws
