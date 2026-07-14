@@ -229,6 +229,26 @@ make repos/upgrade/major  # Major upgrade (breaking changes, new major version)
 
 These commands pull changes from the upstream template. Protected files will be updated automatically — do not interfere with those changes.
 
+##### Using the `tronador` CLI instead of `make`
+
+When the `tronador` CLI is available on the agent's `PATH`, prefer it over the `make repos/upgrade*` targets — it runs the identical workflow (detect template type, resolve the target tag, fetch and apply the template, update CICD metadata, commit the result) without depending on `make` or the network-fetched `.tronador` accelerator include. Installation of the CLI itself is out of scope here; assume it is already installed.
+
+```sh
+tronador repos available          # List template versions available for upgrade
+tronador repos upgrade            # Equivalent to `make repos/upgrade` (latest tag in current major/minor line)
+tronador repos upgrade major      # Equivalent to `make repos/upgrade/major` (latest tag in current major line)
+tronador repos upgrade <version>  # Upgrade to an explicit tag/branch, e.g. `tronador repos upgrade v5.12.0`
+tronador repos upgrade master     # Upgrade from the template repository's master branch tip
+```
+
+Useful flags (apply to all `tronador repos *` subcommands):
+
+- `--dry-run` — preview what the upgrade would change without touching the working tree; run this before the real upgrade to review scope.
+- `--workdir <path>` — target a repository other than the current directory.
+- `-v, --verbose` — verbose output, useful when diagnosing a failed template fetch or apply step.
+
+`tronador repos upgrade` stages and commits the applied changes itself (the same effect as `tronador repos push`), so continue at **Step 2** below to re-run `make init/project` and review the diff exactly as you would after a `make repos/upgrade*` run. The same protected-files rule applies: do not hand-edit anything the upgrade wrote under `.cloudopsworks/boilerplate/`, `.cloudopsworks/hooks/`, `.cloudopsworks/_VERSION`, `.cloudopsworks/LICENSE`, `.cloudopsworks/labeler.yml`, or `.github/`.
+
 #### Step 2: Re-run `make init/project`
 
 After the upgrade, re-apply the boilerplate to regenerate `root.hcl`, `global-inputs.yaml`, and other templated files using the existing stored inputs:
