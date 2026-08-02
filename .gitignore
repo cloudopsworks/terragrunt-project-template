@@ -1,3 +1,4 @@
+# BEGIN TRONADOR TEMPLATE MANAGED BLOCK
 # Local .terraform directories
 **/.terraform/
 **/.terraform/*
@@ -63,3 +64,4 @@ tronador/
 .omx/
 .gstack/
 .opencode/
+# END TRONADOR TEMPLATE MANAGED BLOCK
