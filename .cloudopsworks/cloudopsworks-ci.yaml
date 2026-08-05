@@ -31,14 +31,14 @@ config:
       paths:
         - ".github/**/*"
         - ".cloudopsworks/**/*"
-        - "Makefile"
         - ".gitignore"
-        - "root.hcl"
-        - "common/**/*"
         - ".inputs*"
-        - "state_conf.yaml"
         - "global-inputs.yaml"
         - "global-tags.json"
+        - "Makefile"
+        - "state_conf.yaml"
+        - "root.hcl"
+        - "common/**/*"
       allow:
         - organizationAdmin
       exempt:
