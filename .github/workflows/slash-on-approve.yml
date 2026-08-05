@@ -31,12 +31,22 @@ jobs:
     steps:
       - uses: actions/github-script@v8
         id: approval
+        env:
+          PULL_REQUEST_PARAM: ${{ github.event.client_payload.slash_command.args.named.pull_request }}
+          PULL_REQUEST_NUMBER: ${{ github.event.client_payload.slash_command.args.named.pull_request_number }}
+          PULL_REQUEST_AUTHOR: ${{ github.event.client_payload.slash_command.args.named.author }}
+          ACTION_EVENT_NAME: ${{ github.event_name }}
+          ACTION_TF_PATH: ${{ env.tf_actions_working_dir }}
+          ACTION_WORKFLOW: ${{ github.workflow }}
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
-            const pull_request = '${{ github.event.client_payload.slash_command.args.named.pull_request }}';
-            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
-            const author = '${{ github.event.client_payload.slash_command.args.named.author }}';
+            const pull_request = '' + (process.env.PULL_REQUEST_PARAM || '') + '';
+            const pull_request_number = '' + (process.env.PULL_REQUEST_NUMBER || '') + '';
+            const author = '' + (process.env.PULL_REQUEST_AUTHOR || '') + '';
+            const actionEventName = '' + (process.env.ACTION_EVENT_NAME || '') + '';
+            const actionTfPath = '' + (process.env.ACTION_TF_PATH || '') + '';
+            const actionWorkflow = '' + (process.env.ACTION_WORKFLOW || '') + '';
             
             const {data: thepull} = await github.rest.pulls.get({
               owner: context.repo.owner,
@@ -53,7 +63,7 @@ jobs:
             Pull request mergeable?: \`${thepull.mergeable}\`
             Approved by: \`${author}\`
             
-            *Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+            *Action: \`${actionEventName}\`, Working Directory: \`${actionTfPath}\`, Workflow: \`${actionWorkflow}\`*`;
 
             const {data: reviewers} = await github.rest.pulls.listRequestedReviewers({
               owner: context.repo.owner,
