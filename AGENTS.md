@@ -21,12 +21,64 @@ Check whether any MCP (Model Context Protocol) servers are available in the curr
 Check whether the agent is running inside an IDE with active integrations (e.g., JetBrains, VS Code, Cursor):
 
 - If **IDE MCP tools** are available (e.g., `mcp__webstorm__*`, `mcp__vscode__*`): use them for file operations, terminal commands, and project navigation in preference to raw shell calls.
-- If an IDE terminal tool is available, prefer it over the generic Bash tool for running `make` targets, as it inherits the project's environment automatically.
+- If an IDE terminal tool is available, prefer it over the generic Bash tool for running `tronador` commands, as it inherits the project's environment automatically.
 - If IDE Git tools are available, use them to stage, diff, and commit files.
 
 ### Fallback
 
-If no MCP servers or IDE integrations are detected, use standard CLI tools: `gh` for GitHub operations, `git` for version control, `make` for build targets.
+If no MCP servers or IDE integrations are detected, use standard CLI tools: `tronador` for project and repository lifecycle operations, `gh` for GitHub operations, and `git` for version control. Fall back to `make` only for the operations listed under [Operations still driven by `make`](#operations-still-driven-by-make).
+
+---
+
+## Tooling: the `tronador` CLI replaces `make`
+
+> **The `Makefile` is deprecated.** All project and repository lifecycle operations must be driven through the `tronador` CLI. The `Makefile` and the network-fetched `.tronador` accelerator include are retained only for backwards compatibility and for the few operations that have no CLI equivalent yet. Do not add new `make` targets, and never use a `make` target when a `tronador` command exists.
+
+### Why
+
+The `make` targets set `TRONADOR_AUTO_INIT := true`, which curls `https://cowk.io/acc` into `.tronador` and clones the accelerator repository on every invocation — a network dependency on every build. The `tronador` CLI is a single installed binary: it never dispatches through a `Makefile`, needs no network fetch to bootstrap itself, provisions the tools it declares, and supports `--dry-run` on every command.
+
+### Command mapping
+
+| Deprecated `make` target | Use instead | Notes |
+|---|---|---|
+| `make init/project` | `tronador project init` | Picks up `.inputs`, `.inputs_mod`, `.inputs_state`, and `.cloudopsworks/.inputs_cicd` automatically when present, then formats the rendered HCL |
+| `make lint` | `tronador project lint` | Alias `tronador project validate`. Read-only |
+| `make clean` | `tronador project clean --yes` | Destructive; `--yes` is required non-interactively |
+| `make clean/project` | `tronador project clean-inputs --yes` | Destructive; removes the stored boilerplate input files |
+| `terragrunt hcl format …` | `tronador project format` | Alias `tronador project fmt` |
+| `make repos/upgrade` | `tronador repos upgrade` | Latest tag in the current major/minor line |
+| `make repos/upgrade/major` | `tronador repos upgrade major` | Latest tag in the current major line |
+| `.cloudopsworks/hooks/module_versions.sh` | `tronador iac module` | Report mode by default; add `--upgrade` to rewrite `?ref=` pins |
+
+### Discover capabilities before assuming a command exists
+
+`tronador project` resolves its capability set from the `.cloudopsworks/.iac` workspace marker, so the available capabilities differ between repository types. Never guess a capability name — list them:
+
+```sh
+tronador project detect        # Report the detected implementation and workspace marker
+tronador project capabilities  # List every capability, its mutation class, and its flags
+```
+
+### Global flags
+
+These apply across `tronador` commands:
+
+- `--dry-run` — print the resolved tool pipeline without touching the working tree. **Run this first** for any destructive or file-mutating command.
+- `--workdir <path>` — target a repository other than the current directory.
+- `-v, --verbose` — verbose output, useful when diagnosing a failed template fetch or apply step.
+- `--yes` — confirm destructive operations (`project clean`, `project clean-inputs`) non-interactively.
+- `--json` — stable JSON output, for agents that need to parse results (`tronador project` only).
+
+### Operations still driven by `make`
+
+The `tronador` CLI does not yet expose branch and pull request workflows. The `make gitflow/*` targets remain the **only** supported way to create, publish, and finish branches:
+
+- `make gitflow/feature/start-no-develop:<name>`, `make gitflow/feature/publish`, `make gitflow/feature/finish-no-develop`
+- `make gitflow/hotfix/start`, `make gitflow/hotfix/publish`, `make gitflow/hotfix/finish`
+- `make tag` / `make tag_local` — GitVersion-driven tag maintenance
+
+Use them as documented in [Branch and Pull Request Procedure](#branch-and-pull-request-procedure). Everything else must go through `tronador`.
 
 ---
 
@@ -39,22 +91,26 @@ This is a **Terragrunt/Terraform IaC project template** for managing multi-cloud
 ### Prerequisites
 
 Ensure the following tools are available before proceeding:
-- `make`
-- `terragrunt` (v0.99+)
-- `boilerplate` — installed automatically via `make init/project` if missing
+- `tronador` — the CLI that drives every project operation; assume it is already installed on `PATH`
+- `terragrunt` (v0.99+) — provisioned automatically by `tronador project init` if missing
+- `boilerplate` — provisioned automatically by `tronador project init` if missing
 - `gitversion` — required only for version tagging
+- `make` — deprecated; still needed only for the `gitflow/*` targets
 
 ### Initialization Steps
 
-#### Step 1: Run `make init/project`
+#### Step 1: Run `tronador project init`
 
-This is the **mandatory first step** for any fresh repository. It invokes the boilerplate engine against `.cloudopsworks/boilerplate/main/` and scaffolds the project configuration.
+This is the **mandatory first step** for any fresh repository. It invokes the boilerplate engine against `.cloudopsworks/boilerplate/main/`, scaffolds the project configuration, and then formats the rendered HCL.
 
 ```sh
-make init/project
+tronador project init --dry-run   # Review the resolved tool pipeline first
+tronador project init
 ```
 
-You will be prompted for the following variables (or supply them via `--var` flags / `.inputs` file):
+> Deprecated equivalent: `make init/project`. Do not use it.
+
+You will be prompted for the following variables (or supply them via a `.inputs` file):
 
 | Variable | Description | Options / Default |
 |---|---|---|
@@ -71,7 +127,7 @@ You will be prompted for the following variables (or supply them via `--var` fla
 
 #### Step 2: Review generated files
 
-After `make init/project` completes, the following files are created or updated:
+After `tronador project init` completes, the following files are created or updated:
 
 - `root.hcl` — Terragrunt root configuration (provider, state backend, assume-role)
 - `global-inputs.yaml` — Global variable inputs for all modules
@@ -88,16 +144,40 @@ Edit `.cloudopsworks/cloudopsworks-ci.yaml` to match the project's governance re
 
 ```yaml
 config:
+  # Enable GitHub branch protection on the repository
   branchProtection: true
+
+  # Conventional commits Ruleset — requires a paid GitHub plan (Pro/Team/Enterprise)
+  conventionalCommitsEnabled: false
+  enforceConventionalCommits: false
+
+  # Custom commit message pattern enforcement
+  enforceCustomCommitsPattern: false
+  enforceCustomCommitsPatternRegex: "PROJECT-[0-9]+"
+
   gitFlow:
     enabled: false
     supportBranches: false
+
+  # Named protected-source rules — see "Protected sources" below
   protectedSources:
-    - "*.tf"
-    - "*.tfvars"
-    - OWNERS
-    - Makefile
-    - .github
+    owners-only:
+      paths:
+        - ".github/**/*"
+        - ".cloudopsworks/**/*"
+        - "Makefile"
+        - ".gitignore"
+        - "root.hcl"
+        - "common/**/*"
+        - ".inputs*"
+        - "state_conf.yaml"
+        - "global-inputs.yaml"
+        - "global-tags.json"
+      allow:
+        - <github-username-or-org/team>
+      exempt:
+        - <automation-account>
+
   requiredReviewers: 1
   reviewers:
     - <github-username>
@@ -123,6 +203,47 @@ This project uses **GitHub Flow**: `master` is always the deployable branch. All
 
 Adjust `reviewers`, `owners`, and `requiredReviewers` as needed.
 
+##### Protected sources
+
+`protectedSources` is a **map of named rules**, not a flat list of glob patterns. The flat-list form is the old schema and is no longer honoured — repositories still carrying it must be migrated.
+
+```yaml
+# OLD — flat list, no longer supported
+protectedSources:
+  - "*.tf"
+  - "*.tfvars"
+  - OWNERS
+  - Makefile
+  - .github
+
+# NEW — named rules
+protectedSources:
+  <rule-name>:
+    paths:  [...]   # Glob patterns the rule guards
+    allow:  [...]   # Principals permitted to change those paths
+    exempt: [...]   # Principals the rule is not applied to at all
+```
+
+| Key | Meaning |
+|---|---|
+| `<rule-name>` | Arbitrary identifier for the rule. The template ships one rule named `owners-only`; define as many additional rules as the project needs. |
+| `paths` | Glob patterns matched against the files changed in a pull request. Directory trees use `**/*`. |
+| `allow` | Principals (GitHub usernames or `org/team`) permitted to modify the matched paths. Rendered by boilerplate from the `reviewers` input. |
+| `exempt` | Principals the rule never applies to — typically automation accounts that must be able to commit template and CI updates unattended. Rendered by boilerplate from the `owners` input. |
+
+The default `owners-only` rule guards the template-owned and boilerplate-generated files described in [Hard Rule: Protected Files](#hard-rule-protected-files--never-modify). Note that it now also guards `root.hcl`, `global-inputs.yaml`, `global-tags.json`, `.inputs*`, `state_conf.yaml`, and `common/**/*` — none of which were covered by the old flat list. Agents editing any of those paths must expect the pull request to require an `allow`-listed reviewer.
+
+##### Commit message enforcement
+
+| Key | Default | Effect |
+|---|---|---|
+| `conventionalCommitsEnabled` | `false` | Creates the GitHub Ruleset for conventional commits. Requires a paid GitHub plan — has no effect on Free plans. |
+| `enforceConventionalCommits` | `false` | Enforces the conventional commit format on commit messages. |
+| `enforceCustomCommitsPattern` | `false` | Enforces `enforceCustomCommitsPatternRegex` on commit messages. |
+| `enforceCustomCommitsPatternRegex` | `"PROJECT-[0-9]+"` | The regex applied when `enforceCustomCommitsPattern` is `true` — for example, requiring a Jira ticket key in every commit message. |
+
+Enabling these does not remove the `+semver:` annotation requirement described in [Semver Commit Annotations](#semver-commit-annotations) — GitVersion still reads that annotation from the merge commit.
+
 #### Step 4: Add infrastructure modules
 
 Structure project-specific infrastructure under purpose-named directories (not inside `sample/`, which is for reference only). Typical layout:
@@ -144,11 +265,16 @@ Each leaf module directory should contain:
 #### Step 5: Validate
 
 ```sh
-make lint    # Validates all HCL files; checks module version references
-make clean   # Removes .terragrunt-cache and plan artifacts before committing
+tronador project lint         # Validates Terragrunt and Terraform/OpenTofu configuration
+tronador iac module           # Reports stale module ?ref= version pins
+tronador project clean --yes  # Removes caches and plan artifacts before committing
 ```
 
+> Deprecated equivalents: `make lint`, `make clean`. Do not use them.
+
 #### Step 6: Initial commit workflow
+
+Branch operations have no `tronador` equivalent yet, so the `make gitflow/*` targets below remain the supported path — see [Operations still driven by `make`](#operations-still-driven-by-make).
 
 1. Create a feature branch for the initial setup:
    ```sh
@@ -206,7 +332,7 @@ Agents may freely read and modify the following:
 | `networking/**` | Networking infrastructure modules |
 | Any project-specific directory | Infrastructure authored for this project |
 
-The following files are **boilerplate-generated** and must never be modified directly. They are regenerated by `make init/project` from stored inputs and any manual edits will be overwritten:
+The following files are **boilerplate-generated** and must never be modified directly. They are regenerated by `tronador project init` from stored inputs and any manual edits will be overwritten:
 
 ```
 root.hcl
@@ -220,44 +346,50 @@ global-inputs.yaml
 
 #### Step 1: Run the appropriate upgrade command
 
-Use the correct upgrade target depending on the version change:
-
-```sh
-make repos/upgrade        # Minor upgrade (patch and minor version bumps)
-make repos/upgrade/major  # Major upgrade (breaking changes, new major version)
-```
-
-These commands pull changes from the upstream template. Protected files will be updated automatically — do not interfere with those changes.
-
-##### Using the `tronador` CLI instead of `make`
-
-When the `tronador` CLI is available on the agent's `PATH`, prefer it over the `make repos/upgrade*` targets — it runs the identical workflow (detect template type, resolve the target tag, fetch and apply the template, update CICD metadata, commit the result) without depending on `make` or the network-fetched `.tronador` accelerator include. Installation of the CLI itself is out of scope here; assume it is already installed.
+Use the `tronador repos` commands. They run the full workflow — detect the current template type, resolve the target tag, fetch and apply the template, update CICD metadata, and commit the result — without depending on `make` or the network-fetched `.tronador` accelerator include.
 
 ```sh
 tronador repos available          # List template versions available for upgrade
-tronador repos upgrade            # Equivalent to `make repos/upgrade` (latest tag in current major/minor line)
-tronador repos upgrade major      # Equivalent to `make repos/upgrade/major` (latest tag in current major line)
-tronador repos upgrade <version>  # Upgrade to an explicit tag/branch, e.g. `tronador repos upgrade v5.12.0`
+tronador repos upgrade --dry-run  # Preview the upgrade scope without touching the working tree
+tronador repos upgrade            # Latest tag in the current major/minor line
+tronador repos upgrade major      # Latest tag in the current major line
+tronador repos upgrade <version>  # Explicit tag or branch, e.g. `tronador repos upgrade v5.12.0`
 tronador repos upgrade master     # Upgrade from the template repository's master branch tip
 ```
+
+> Deprecated equivalents: `make repos/upgrade` and `make repos/upgrade/major`. Do not use them.
+
+These commands pull changes from the upstream template. Protected files will be updated automatically — do not interfere with those changes.
 
 Useful flags (apply to all `tronador repos *` subcommands):
 
 - `--dry-run` — preview what the upgrade would change without touching the working tree; run this before the real upgrade to review scope.
 - `--workdir <path>` — target a repository other than the current directory.
 - `-v, --verbose` — verbose output, useful when diagnosing a failed template fetch or apply step.
+- `--config <path>` — override the embedded repos JSON config.
+- `--gh <path>` / `--git <path>` — use explicit `gh` and `git` executables instead of the ones on `PATH`.
 
-`tronador repos upgrade` stages and commits the applied changes itself (the same effect as `tronador repos push`), so continue at **Step 2** below to re-run `make init/project` and review the diff exactly as you would after a `make repos/upgrade*` run. The same protected-files rule applies: do not hand-edit anything the upgrade wrote under `.cloudopsworks/boilerplate/`, `.cloudopsworks/hooks/`, `.cloudopsworks/_VERSION`, `.cloudopsworks/LICENSE`, `.cloudopsworks/labeler.yml`, or `.github/`.
+Other `tronador repos` subcommands:
 
-#### Step 2: Re-run `make init/project`
+| Command | Purpose |
+|---|---|
+| `tronador repos available` | List template repository versions available for upgrade |
+| `tronador repos recover` | Restore repository files from the template without committing |
+| `tronador repos push` | Stage and commit template upgrade changes |
+| `tronador repos cicd update` | Update the CICD pipeline footer versioning |
+| `tronador repos clean` | Clean repository workflows |
+
+`tronador repos upgrade` stages and commits the applied changes itself (the same effect as `tronador repos push`), so continue at **Step 2** below to re-run `tronador project init` and review the diff. The same protected-files rule applies: do not hand-edit anything the upgrade wrote under `.cloudopsworks/boilerplate/`, `.cloudopsworks/hooks/`, `.cloudopsworks/_VERSION`, `.cloudopsworks/LICENSE`, `.cloudopsworks/labeler.yml`, or `.github/`.
+
+#### Step 2: Re-run `tronador project init`
 
 After the upgrade, re-apply the boilerplate to regenerate `root.hcl`, `global-inputs.yaml`, and other templated files using the existing stored inputs:
 
 ```sh
-make init/project
+tronador project init
 ```
 
-The Makefile automatically picks up `.inputs`, `.inputs_mod`, `.cloudopsworks/.inputs_cicd`, and `.inputs_state` if they exist, so no re-prompting occurs.
+`tronador project init` automatically picks up `.inputs`, `.inputs_mod`, `.cloudopsworks/.inputs_cicd`, and `.inputs_state` if they exist, so no re-prompting occurs.
 
 #### Step 3: Review generated diffs
 
@@ -265,18 +397,20 @@ Carefully diff the regenerated files against previous versions. The boilerplate 
 - Add new required blocks to `root.hcl`
 - Add new keys to `global-inputs.yaml`
 - Update provider version constraints
+- Restructure `.cloudopsworks/cloudopsworks-ci.yaml` — in particular, `protectedSources` migrates from a flat list of globs to a map of named rules, and the commit-enforcement keys (`conventionalCommitsEnabled`, `enforceConventionalCommits`, `enforceCustomCommitsPattern`, `enforceCustomCommitsPatternRegex`) are added. See [Protected sources](#protected-sources) and [Commit message enforcement](#commit-message-enforcement) before reconciling this file — do not restore the old flat list.
 
 Merge any project-specific customizations that were present in the old versions of these files back into the newly generated ones. After merging customizations, re-format any changed HCL files:
 
 ```sh
-terragrunt hcl format --working-dir . --exclude-dir .cloudopsworks
+tronador project format
 ```
 
 #### Step 4: Validate
 
 ```sh
-make lint    # Catches HCL syntax errors and stale module version refs
-make clean   # Clears caches and plan artifacts
+tronador project lint         # Catches HCL syntax errors
+tronador iac module           # Reports stale module ?ref= version pins
+tronador project clean --yes  # Clears caches and plan artifacts
 ```
 
 #### Step 5: Commit only non-protected files
@@ -299,13 +433,13 @@ There is a skill related to this template module and their implementations, it c
 - Branches must be created before any change is committed.
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all project version tags — GitVersion derives these automatically from commit message annotations.
 - GitHub Flow is the branching model: all branches are created from `master` and merged back into `master`. There is no `develop` branch in this project.
-- Always use `make gitflow/*` targets for branch operations — never raw `git checkout -b` or `git push -u origin`. These targets handle dependency checks, naming conventions, and upstream tracking automatically.
+- Always use `make gitflow/*` targets for branch operations — never raw `git checkout -b` or `git push -u origin`. These targets handle dependency checks, naming conventions, and upstream tracking automatically. Branch workflows are the one remaining exception to the `make` deprecation; see [Operations still driven by `make`](#operations-still-driven-by-make).
 - Plan consistently and thoroughly before starting any work.
 - Use `gh` CLI for PR management. When waiting for CI checks to pass, use `gh pr checks <PR_NUMBER> --watch`.
 
 #### Branch naming and creation
 
-All changes must be made on a dedicated branch, never directly on `master`. Use the `make gitflow/*` targets — never raw `git checkout -b`.
+All changes must be made on a dedicated branch, never directly on `master`. Use the `make gitflow/*` targets — never raw `git checkout -b`. These targets have no `tronador` equivalent yet and remain the supported path.
 
 | Branch type | Creation command | When to use | Semver impact |
 |---|---|---|---|
@@ -348,9 +482,9 @@ Use the following format for the PR body. The `+semver:` annotation in the body 
 +semver: <major|minor|patch|fix>
 
 ## Checklist
-- [ ] HCL formatted (`terragrunt hcl format --working-dir <path> --exclude-dir .cloudopsworks`)
-- [ ] `make lint` passes with no errors
-- [ ] `make clean` run before committing (no cache artifacts staged)
+- [ ] HCL formatted (`tronador project format`)
+- [ ] `tronador project lint` passes with no errors
+- [ ] `tronador project clean --yes` run before committing (no cache artifacts staged)
 - [ ] `+semver:` annotation included in PR body matching expected version impact
 - [ ] No protected files modified (`.cloudopsworks/boilerplate/`, `.cloudopsworks/hooks/`, `.cloudopsworks/_VERSION`, `.cloudopsworks/LICENSE`, `.cloudopsworks/labeler.yml`, `.github/`)
 - [ ] No boilerplate-generated files modified directly (`root.hcl`, `global-inputs.yaml`, `.inputs`, `.inputs_mod`, `.cloudopsworks/.inputs_cicd`)
@@ -362,16 +496,37 @@ The CI plan workflow will run automatically against the PR. Do not merge until t
 
 ### Module Version Checks
 
-The `.cloudopsworks/hooks/module_versions.sh` hook runs automatically in CI to detect outdated `?ref=` version pins in `terragrunt.hcl` files. When modules are flagged as outdated:
+The `.cloudopsworks/hooks/module_versions.sh` hook runs automatically in CI to detect outdated `?ref=` version pins in `terragrunt.hcl` files. Locally, use `tronador iac module` rather than invoking the hook directly — it reads the same `.cloudopsworks/.iac` workspace marker and can apply the updates for you.
+
+```sh
+tronador iac module                          # Report available patch/minor/major targets, change nothing
+tronador iac module --path environments/dev  # Restrict module discovery to one subtree
+tronador iac module --upgrade                # Rewrite eligible ?ref= pins to the latest patch (default tier)
+tronador iac module --upgrade --minor        # Latest eligible minor in the current major series
+tronador iac module --upgrade --major        # Latest eligible major; falls back to the highest eligible minor
+tronador iac module --fix-prefix             # Add missing git:: prefixes without changing refs
+```
+
+Flag notes:
+
+- `--minor` and `--major` require `--upgrade` and are mutually exclusive.
+- `--alpha` / `--beta` permit prerelease tags to be selected.
+- `-r, --report-ghaction` emits GitHub Actions warning annotations; `-c, --comment-pr-num <n>` posts the findings as a pull request comment.
+- `--dry-run` previews the rewrite without touching files.
+
+When modules are flagged as outdated:
 
 1. Start a hotfix branch:
    ```sh
    make gitflow/hotfix/start
    ```
-2. Open the relevant `terragrunt.hcl` file and update the `source` URL's `?ref=` value to the recommended version shown in the CI warning.
-3. Format the changed file:
+2. Apply the update, or edit the `source` URL's `?ref=` value by hand to the recommended version shown in the CI warning:
    ```sh
-   terragrunt hcl format --working-dir <directory-containing-the-terragrunt.hcl>
+   tronador iac module --upgrade
+   ```
+3. Format the changed files:
+   ```sh
+   tronador project format
    ```
 4. Commit with a patch annotation:
    ```sh
@@ -387,11 +542,19 @@ The `.cloudopsworks/hooks/module_versions.sh` hook runs automatically in CI to d
 
 ### CI/CD Governance Updates
 
-When CI/CD settings need to change (new environments, reviewer changes, runner configuration):
+When CI/CD settings need to change (new environments, reviewer changes, runner configuration, protected sources, commit message enforcement):
 
 1. Edit `.cloudopsworks/cloudopsworks-ci.yaml` only.
 2. Do not edit `.github/workflows/` files directly.
 3. Commit the change and let the repository governance automation pick it up.
+
+Schema notes for agents editing this file — [Step 3: Configure `cloudopsworks-ci.yaml`](#step-3-configure-cloudopsworks-ciyaml) holds the full reference:
+
+- `protectedSources` is a **map of named rules** (`<rule-name>: { paths, allow, exempt }`), not a flat list of globs. A repository still carrying the flat-list form is on the old schema; `tronador repos upgrade` followed by `tronador project init` regenerates it. Never reintroduce the flat list.
+- The default `owners-only` rule guards `.github/**/*`, `.cloudopsworks/**/*`, `Makefile`, `.gitignore`, `root.hcl`, `common/**/*`, `.inputs*`, `state_conf.yaml`, `global-inputs.yaml`, and `global-tags.json`. Pull requests touching those paths need an `allow`-listed reviewer, so plan changes to them accordingly.
+- `allow` is rendered from the boilerplate `reviewers` input and `exempt` from the `owners` input, so changing `reviewers` or `owners` and re-running `tronador project init` rewrites the rule.
+- `conventionalCommitsEnabled`, `enforceConventionalCommits`, `enforceCustomCommitsPattern`, and `enforceCustomCommitsPatternRegex` control commit message rulesets. The Ruleset-based options require a paid GitHub plan and silently do nothing on Free plans.
+- Changes to this file are a PATCH change — use a `hotfix/` branch and `+semver: patch`.
 
 ---
 
@@ -427,7 +590,7 @@ refactor!: replace s3 backend with azurerm +semver: major
 | Bug fix / broken configuration | `hotfix/` | PATCH | `+semver: fix` |
 | Module `?ref=` version pin update | `hotfix/` | PATCH | `+semver: patch` |
 | CI/CD governance update (`cloudopsworks-ci.yaml`) | `hotfix/` | PATCH | `+semver: patch` |
-| Template upgrade follow-up (`make repos/upgrade`) | `hotfix/` | PATCH | `+semver: patch` |
+| Template upgrade follow-up (`tronador repos upgrade`) | `hotfix/` | PATCH | `+semver: patch` |
 | HCL formatting correction only | `hotfix/` | PATCH | `+semver: patch` |
 
 ### Feature Branch Workflow (MINOR / MAJOR changes)
@@ -437,13 +600,10 @@ refactor!: replace s3 backend with azurerm +semver: major
 make gitflow/feature/start-no-develop:<feature-name>
 
 # 2. Implement changes, then format any changed HCL files
-#    Scoped to a specific module directory:
-terragrunt hcl format --working-dir <path/to/module>
-#    Or from the project root (all files, excluding .cloudopsworks):
-terragrunt hcl format --working-dir . --exclude-dir .cloudopsworks
+tronador project format
 
 # 3. Validate
-make lint
+tronador project lint
 
 # 4. Commit with semver annotation
 git add <specific files>
@@ -466,13 +626,10 @@ gh pr checks <PR_NUMBER> --watch
 make gitflow/hotfix/start
 
 # 2. Apply fix, then format if HCL was changed
-#    Scoped to the changed directory:
-terragrunt hcl format --working-dir <path/to/changed/module>
-#    Or from the project root:
-terragrunt hcl format --working-dir . --exclude-dir .cloudopsworks
+tronador project format
 
 # 3. Validate
-make lint
+tronador project lint
 
 # 4. Commit with semver annotation
 git add <specific files>

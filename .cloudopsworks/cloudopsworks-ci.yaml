@@ -25,14 +25,24 @@ config:
   gitFlow:
     enabled: false
     supportBranches: false
-  # Protected sources rules (future implementation)
+  # Protected sources rules
   protectedSources:
-    - "*.tf"
-    - "*.tfvars"
-    - OWNERS
-    - Makefile
-    - .github
-
+    owners-only:
+      paths:
+        - ".github/**/*"
+        - ".cloudopsworks/**/*"
+        - "Makefile"
+        - ".gitignore"
+        - "root.hcl"
+        - "common/**/*"
+        - ".inputs*"
+        - "state_conf.yaml"
+        - "global-inputs.yaml"
+        - "global-tags.json"
+      allow:
+        - organizationAdmin
+      exempt:
+        - cloudopsworks-bot
   # Optional only needed if not automatic or protection is true
   requiredReviewers: 1
 
