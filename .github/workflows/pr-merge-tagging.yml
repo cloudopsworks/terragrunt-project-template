@@ -103,4 +103,4 @@ jobs:
         if: ${{ github.event.pull_request.merged == true && startsWith(github.head_ref, 'feature/') && needs.pre_validate.outputs.repo_type == 'iac' }}
         run: |
           FEATURE=$(echo "${{ github.head_ref }}" | sed -e 's/feature\///g')
-          make gitflow/feature/purge-no-develop:$FEATURE
+          make gitflow/feature/purge:$FEATURE
