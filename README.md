@@ -13,6 +13,7 @@ Terraform Project Build Automation Template
     * gcloud Cli
   * Terragrunt Binary
   * OpenTofu Binary
+  * [Tronador CLI](https://github.com/cloudopsworks/tronador-cli)
 ## How to use this repository
 You can use this repository as a template to create your own terraform project. <br/>
 Generate your repository through the template through the github interface. <br/>
@@ -26,8 +27,13 @@ This project is configured to support different cloud providers, but one at a ti
 ### Initializing the project
 You should initialize the project through the makefile command below. <br/>
 This command will ask you a series of questions to configure the project. <br/>
+*Makefile is being Deprecated*
 ```shell
 make init/project
+```
+Recommended way to initialize the project is through the tronador command below. <br/>
+```shell
+tronador project init
 ```
 After successful run of this command, you will have basic configuration of the project available. <br/>
 Also your inputs will be saved in 2 files `.inputs` and `.inputs_mod` <br/>
