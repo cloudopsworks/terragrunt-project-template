@@ -65,12 +65,14 @@ jobs:
         id: getowner
         uses: cloudopsworks/blueprints/ci/common/getowner@v5.10
 
-      - uses: actions/checkout@v6
+      - name: Checkout IAC Project
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN }}
           ref: ${{ github.head_ref }}
 
-      - uses: actions/labeler@v6
+      - name: Label Pull Request
+        uses: actions/labeler@v6
         with:
           repo-token: ${{ secrets.BOT_TOKEN }}
           configuration-path: '.cloudopsworks/labeler.yml'
@@ -173,12 +175,20 @@ jobs:
       # Push the change to the repository using plain git commands
       - name: Push Deploy Workflow
         continue-on-error: true
+        env:
+          BOT_USER: ${{ vars.BOT_USER }}
+          BOT_EMAIL: ${{ vars.BOT_EMAIL }}
         run: |
-          git config --global user.name "${{ vars.BOT_USER }}"
-          git config --global user.email "${{ vars.BOT_EMAIL }}"
+          git config --global user.name "$BOT_USER"
+          git config --global user.email "$BOT_EMAIL"
           git add .github/workflows/deploy.yml
           git commit -m "chore: Update deploy.yml with terragrunt folders"
-          git push origin ${{ github.head_ref }}
+
+      - name: Push changes
+        uses: ad-m/github-push-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
 
       - name: Terragrunt Validate All
         id: validate
@@ -226,10 +236,11 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.DEPLOYMENT_GCP_CREDENTIALS }}
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
         continue-on-error: true
         shell: bash
         run: |
-          issue_num="${{ github.event.pull_request.number }}"
+          issue_num="$PULL_REQUEST_NUMBER"
           # Use the GitHub CLI to get the list of files changed in the PR, strip last part of the path and sort
           changes=$(gh pr view $issue_num --json files --jq ".files.[].path" | sed 's/[^/]*$//' | grep -Ev ".git*|.cloudopsworks" | sort | uniq)
           echo "Changes: $changes"
@@ -260,14 +271,21 @@ jobs:
 
       - name: Write comment on PR about validation results
         uses: actions/github-script@v8
+        env:
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          FMT_EXIT_CODE: ${{ steps.fmt.outputs.exit_code == 0 && 'OK' || 'FAILED' }}
+          VALIDATE_EXIT_CODE: ${{ steps.validate.outputs.exit_code == 0 && 'OK' || 'FAILED' }}
         with:
-          github-token: ${{secrets.BOT_TOKEN}}
+          github-token: ${{ secrets.BOT_TOKEN }}
           script: |
-            const pull_request_number = '${{ github.event.pull_request.number }}';
+            const pull_request_number = '' + (process.env.PULL_REQUEST_NUMBER || '') + '';
+            const fmt_exit_code = '' + (process.env.FMT_EXIT_CODE || '') + '';
+            const validate_exit_code = '' + (process.env.VALIDATE_EXIT_CODE || '')
+            
             
             const output = `Validation requested for Pull request.
-            *Format check*: \`${{ steps.fmt.outputs.exit_code == 0 && 'OK' || 'FAILED' }}\`
-            *Validation check*: \`${{ steps.validate.outputs.exit_code == 0 && 'OK' || 'FAILED' }}\` `;
+            *Format check*: \`${fmt_exit_code}\`
+            *Validation check*: \`${validate_exit_code}\` `;
             
             github.rest.issues.createComment({
               issue_number: pull_request_number,
@@ -276,11 +294,13 @@ jobs:
               body: output
             });
 
-
       - name: Hard Fail Validation Not Success
+        env:
+          FMT_EXIT_CODE: ${{ steps.fmt.outputs.exit_code }}
+          VALIDATE_EXIT_CODE: ${{ steps.validate.outputs.exit_code }}
         run: |
-          result_fmt="${{ steps.fmt.outputs.exit_code }}"
-          result_validate="${{ steps.validate.outputs.exit_code }}"
+          result_fmt="$FMT_EXIT_CODE"
+          result_validate="$VALIDATE_EXIT_CODE"
           
           if [[ "$result_fmt" == "0" && "$result_validate" == "0" ]] ; then
             echo "All OK... nothing todo"
@@ -296,7 +316,8 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.base_ref != 'master' && github.base_ref != 'main' && ( ! startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/github-script@v8
+      - name: Label Pull Request as Automatic Environment
+        uses: actions/github-script@v8
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
@@ -314,7 +335,8 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref, 'support') ) && github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout IAC Project
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
@@ -332,13 +354,17 @@ jobs:
 
       - name: Add review and approval labels
         uses: actions/github-script@v8
+        env:
+          ACTOR: ${{ github.event.pull_request.user.login }}
+          REVIEWERS_COUNT: ${{ steps.reviewers_count.outputs.result }}
+          REVIEWERS_JSON: ${{ steps.reviewers_json.outputs.result }}
         with:
-          github-token: ${{secrets.BOT_TOKEN}}
+          github-token: ${{ secrets.BOT_TOKEN }}
           script: |
-            const reviewers_json=JSON.parse('${{ steps.reviewers_json.outputs.result }}');
-            const reviewers_count=${{ steps.reviewers_count.outputs.result }};
+            const reviewers_json=JSON.parse('' + (process.env.REVIEWERS_JSON || '') + '');
+            const reviewers_count=parseInt('' + (process.env.REVIEWERS_COUNT || '0') + '');
             const labels = ['approval-required','review-required'];
-            const actor = '${{ github.event.pull_request.user.login }}'
+            const actor = '' + (process.env.ACTOR) + '';
 
             var reviewers = []
             for ( const rev of reviewers_json ) {
@@ -405,4 +431,3 @@ jobs:
             }
 
             return ( is_mergeable ? 'true' : 'false' );
-
