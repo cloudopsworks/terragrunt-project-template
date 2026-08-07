@@ -178,17 +178,15 @@ jobs:
         env:
           BOT_USER: ${{ vars.BOT_USER }}
           BOT_EMAIL: ${{ vars.BOT_EMAIL }}
+          GH_TOKEN: ${{ secrets.BOT_TOKEN }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
+          gh auth setup-git
           git config --global user.name "$BOT_USER"
           git config --global user.email "$BOT_EMAIL"
           git add .github/workflows/deploy.yml
           git commit -m "chore: Update deploy.yml with terragrunt folders"
-
-      - name: Push changes
-        uses: ad-m/github-push-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref }}
+          git push origin $HEAD_REF
 
       - name: Terragrunt Validate All
         id: validate
