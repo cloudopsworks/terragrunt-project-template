@@ -23,6 +23,7 @@ permissions:
 jobs:
   # this one runs only when commenting a pull request
   gitops:
+    name: Process GitOps Command
     runs-on: ubuntu-latest
     if: github.event.issue.pull_request
     steps:

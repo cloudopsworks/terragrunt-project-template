@@ -41,6 +41,7 @@ env:
   tg_version: 0.99.4
 jobs:
   preload:
+    name: Preload Configuration
     outputs:
       runner_set: ${{ steps.local_runner_set.outputs.result == '' && steps.runner_set.outputs.result || steps.local_runner_set.outputs.result }}
     #if: ${{ startsWith(github.ref,'refs/heads/release/') || startsWith(github.ref,'refs/heads/develop') || startsWith(github.ref,'refs/heads/support/') || startsWith(github.ref,'refs/tags/v') }}
@@ -96,6 +97,7 @@ jobs:
         with:
           cmd: yq '.runner_set // "ubuntu-latest"' ./global-inputs.yaml
   plan:
+    name: Plan Infrastructure
     needs:
       - preload
     runs-on: ${{ needs.preload.outputs.runner_set }}
@@ -210,6 +212,7 @@ jobs:
             **/tfplan.tfplan
             **/tfplan.out
   deploy:
+    name: Deploy Infrastructure
     needs:
       - preload
       - plan
