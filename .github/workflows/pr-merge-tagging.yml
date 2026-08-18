@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   pre_validate:
+    name: Pre-Validate Release
     outputs:
       repo_type: ${{ steps.repo_type.outputs.result }}
     runs-on: ubuntu-latest
@@ -47,6 +48,7 @@ jobs:
           fi
 
   push_tag:
+    name: Push Release Tag
     if: ${{ github.event.pull_request.merged == true && ( github.base_ref == 'master' || github.base_ref == 'main' || startsWith(github.base_ref,'support/') ) }}
     runs-on: ubuntu-latest
     steps:
@@ -71,6 +73,7 @@ jobs:
           make gitflow/version/publish
 
   branch_deletion:
+    name: Delete Branch
     if: (! failure())
     needs:
       - push_tag

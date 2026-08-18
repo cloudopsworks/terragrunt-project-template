@@ -28,6 +28,7 @@ permissions:
 
 jobs:
   close-pull:
+    name: Cancel Rollback Pull Request
     runs-on: ubuntu-latest
     steps:
       - name: Closes the Pull Request

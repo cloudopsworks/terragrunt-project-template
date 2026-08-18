@@ -38,6 +38,7 @@ env:
 
 jobs:
   preload:
+    name: Preload Configuration
     outputs:
       runner_set: ${{ steps.config.outputs.runner_set }}
     runs-on: ubuntu-latest
@@ -54,6 +55,7 @@ jobs:
         uses: ./bp/ci/config/terragrunt
 
   plan:
+    name: Plan Infrastructure
     needs:
       - preload
     runs-on: ${{ needs.preload.outputs.runner_set }}
@@ -315,6 +317,7 @@ jobs:
 
   # Proceed with labeling if the procedure is candidate to be autoapproved
   label_autoapprove:
+    name: Label Auto-Approve
     needs:
       - plan
     runs-on: ubuntu-latest
@@ -334,6 +337,7 @@ jobs:
 
   # Job to add the required reviewers and approvals to the PR
   add_reviewers_and_approvals:
+    name: Add Reviewers and Approvals
     needs:
       - plan
     runs-on: ubuntu-latest
@@ -395,6 +399,7 @@ jobs:
   #   the conditions are:
   #     labels are: blue-green/new or blue-green/complete
   do_not_merge_label:
+    name: Apply Do Not Merge Label
     needs:
       - plan
     runs-on: ubuntu-latest
