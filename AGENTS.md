@@ -26,7 +26,7 @@ Check whether the agent is running inside an IDE with active integrations (e.g.,
 
 ### Fallback
 
-If no MCP servers or IDE integrations are detected, use standard CLI tools: `tronador` for project and repository lifecycle operations, `gh` for GitHub operations, and `git` for version control. Fall back to `make` only for the operations listed under [Operations still driven by `make`](#operations-still-driven-by-make).
+If no MCP servers or IDE integrations are detected, use standard CLI tools: `tronador` for project and repository lifecycle operations, `gh` for GitHub operations, and `git` for version control. Direct Make invocation is deprecated for README and Git-flow/version operations; destructive purge uses the Tronador policy below.
 
 ---
 
@@ -36,13 +36,13 @@ If no MCP servers or IDE integrations are detected, use standard CLI tools: `tro
 
 ### Why
 
-The `make` targets set `TRONADOR_AUTO_INIT := true`, which curls `https://cowk.io/acc` into `.tronador` and clones the accelerator repository on every invocation — a network dependency on every build. The `tronador` CLI is a single installed binary: it never dispatches through a `Makefile`, needs no network fetch to bootstrap itself, provisions the tools it declares, and supports `--dry-run` on every command.
+The `make` targets set `TRONADOR_AUTO_INIT := true`, which curls `https://cowk.io/acc` into `.tronador` and clones the accelerator repository on every invocation — a network dependency on every build. The `tronador` CLI is a single installed binary: it needs no Makefile or network fetch to bootstrap itself, provisions the tools it declares, and supports `--dry-run` on every command. Documentation compatibility commands may still invoke existing Make targets internally.
 
 ### Command mapping
 
 | Deprecated `make` target | Use instead | Notes |
 |---|---|---|
-| `make init/project` | `tronador project init` | Picks up `.inputs`, `.inputs_mod`, `.inputs_state`, and `.cloudopsworks/.inputs_cicd` automatically when present, then formats the rendered HCL |
+| `make init/project` | `tronador project init --allow-network` | Picks up `.inputs`, `.inputs_mod`, `.inputs_state`, and `.cloudopsworks/.inputs_cicd` automatically when present, then formats the rendered HCL |
 | `make lint` | `tronador project lint` | Alias `tronador project validate`. Read-only |
 | `make clean` | `tronador project clean --yes` | Destructive; `--yes` is required non-interactively |
 | `make clean/project` | `tronador project clean-inputs --yes` | Destructive; removes the stored boilerplate input files |
@@ -70,15 +70,35 @@ These apply across `tronador` commands:
 - `--yes` — confirm destructive operations (`project clean`, `project clean-inputs`) non-interactively.
 - `--json` — stable JSON output, for agents that need to parse results (`tronador project` only).
 
-### Operations still driven by `make`
+### Tronador-first branch and version operations
 
-The `tronador` CLI does not yet expose branch and pull request workflows. The `make gitflow/*` targets remain the **only** supported way to create, publish, and finish branches:
+The `tronador versions` command set supports branch, pull-request, and version-tag
+workflows. Before starting a feature, verify that the active GitVersion configuration
+declares the intended `# Agents: WayOfWork=...` policy; missing or contradictory
+metadata is a blocker. `tronador versions feature start "<name>"` starts from
+`develop` for GitFlow and from the configured primary branch for GitHub Flow or
+trunk-based development. Use the matching `publish` and `finish` subcommands, and
+use `tronador versions tag --publish` to create and publish a tag.
 
-- `make gitflow/feature/start-no-develop:<name>`, `make gitflow/feature/publish`, `make gitflow/feature/finish-no-develop`
-- `make gitflow/hotfix/start`, `make gitflow/hotfix/publish`, `make gitflow/hotfix/finish`
-- `make tag` / `make tag_local` — GitVersion-driven tag maintenance
+For documentation, use `tronador readme build`; run `tronador docs targets` first
+when committed target/dependency documentation also needs refresh. The Makefiles
+remain for compatibility, but agents must not use them for README or
+Git-flow/version operations.
 
-Use them as documented in [Branch and Pull Request Procedure](#branch-and-pull-request-procedure). Everything else must go through `tronador`.
+After verifying the corresponding merge completed, destructive cleanup must use
+`tronador versions feature purge ... --allow-network`,
+`tronador versions hotfix purge ... --allow-network`, or
+`tronador versions release purge ... --allow-network`. Fail closed if the WayOfWork
+policy, merge evidence, authentication, or remote state is missing or contradictory;
+do not fall back to Make. For a GitFlow release merged into `support/*`, the release
+must also be back-integrated into `develop` before purge; otherwise Tronador
+intentionally refuses deletion. CI jobs must install the CLI first with
+`uses: cloudopsworks/install-tronador-cli@v1`.
+Run `tronador project version --generate --yes` only after verified GitHub-template
+or source-owner policy explicitly makes `_VERSION` writable. When authorized, the
+command only writes the guarded file and never commits, tags, or pushes. In downstream
+implementations `_VERSION` remains a protected template marker; marker presence or
+inherited prose never grants authority.
 
 ---
 
@@ -95,7 +115,8 @@ Ensure the following tools are available before proceeding:
 - `terragrunt` (v0.99+) — provisioned automatically by `tronador project init` if missing
 - `boilerplate` — provisioned automatically by `tronador project init` if missing
 - `gitversion` — required only for version tagging
-- `make` — deprecated; still needed only for the `gitflow/*` targets
+- `make` — deprecated for agent-facing README and Git-flow/version operations;
+  retained only for backwards compatibility
 
 ### Initialization Steps
 
@@ -104,8 +125,8 @@ Ensure the following tools are available before proceeding:
 This is the **mandatory first step** for any fresh repository. It invokes the boilerplate engine against `.cloudopsworks/boilerplate/main/`, scaffolds the project configuration, and then formats the rendered HCL.
 
 ```sh
-tronador project init --dry-run   # Review the resolved tool pipeline first
-tronador project init
+tronador project init --allow-network --dry-run   # Review the resolved tool pipeline first
+tronador project init --allow-network
 ```
 
 > Deprecated equivalent: `make init/project`. Do not use it.
@@ -274,20 +295,20 @@ tronador project clean --yes  # Removes caches and plan artifacts before committ
 
 #### Step 6: Initial commit workflow
 
-Branch operations have no `tronador` equivalent yet, so the `make gitflow/*` targets below remain the supported path — see [Operations still driven by `make`](#operations-still-driven-by-make).
+Use the Tronador commands below after verifying that the repository's declared WayOfWork matches its GitHub Flow policy.
 
 1. Create a feature branch for the initial setup:
    ```sh
-   make gitflow/feature/start-no-develop:initial-project-setup
+   tronador versions feature start "initial-project-setup"
    ```
 2. Commit all generated and authored files on that branch.
 3. Publish the branch to the remote (sets upstream tracking):
    ```sh
-   make gitflow/feature/publish
+   tronador versions feature publish
    ```
 4. Open a PR targeting `master`:
    ```sh
-   make gitflow/feature/finish-no-develop
+   tronador versions feature finish
    ```
 5. The CI plan workflow will run automatically on the PR.
 6. After approval and merge, the CD workflow can deploy to target environments.
@@ -386,7 +407,7 @@ Other `tronador repos` subcommands:
 After the upgrade, re-apply the boilerplate to regenerate `root.hcl`, `global-inputs.yaml`, and other templated files using the existing stored inputs:
 
 ```sh
-tronador project init
+tronador project init --allow-network
 ```
 
 `tronador project init` automatically picks up `.inputs`, `.inputs_mod`, `.cloudopsworks/.inputs_cicd`, and `.inputs_state` if they exist, so no re-prompting occurs.
@@ -433,20 +454,20 @@ There is a skill related to this template module and their implementations, it c
 - Branches must be created before any change is committed.
 - Follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`) for all project version tags — GitVersion derives these automatically from commit message annotations.
 - GitHub Flow is the branching model: all branches are created from `master` and merged back into `master`. There is no `develop` branch in this project.
-- Always use `make gitflow/*` targets for branch operations — never raw `git checkout -b` or `git push -u origin`. These targets handle dependency checks, naming conventions, and upstream tracking automatically. Branch workflows are the one remaining exception to the `make` deprecation; see [Operations still driven by `make`](#operations-still-driven-by-make).
+- Always use `tronador versions` for branch operations — never raw `git checkout -b` or `git push -u origin`. Tronador handles dependency checks, naming conventions, and upstream tracking.
 - Plan consistently and thoroughly before starting any work.
 - Use `gh` CLI for PR management. When waiting for CI checks to pass, use `gh pr checks <PR_NUMBER> --watch`.
 
 #### Branch naming and creation
 
-All changes must be made on a dedicated branch, never directly on `master`. Use the `make gitflow/*` targets — never raw `git checkout -b`. These targets have no `tronador` equivalent yet and remain the supported path.
+All changes must be made on a dedicated branch, never directly on `master`. Use `tronador versions` — never raw `git checkout -b`.
 
 | Branch type | Creation command | When to use | Semver impact |
 |---|---|---|---|
-| `feature/<name>` | `make gitflow/feature/start-no-develop:<name>` | New infra modules, provider upgrades, new environments | MINOR or MAJOR |
-| `hotfix/<version>` | `make gitflow/hotfix/start` (auto-named by GitVersion) | Config corrections, module `?ref=` bumps, CI repairs, doc fixes | PATCH |
+| `feature/<name>` | `tronador versions feature start "<name>"` | New infra modules, provider upgrades, new environments | MINOR or MAJOR |
+| `hotfix/<version>` | `tronador versions hotfix start` (auto-named by GitVersion) | Config corrections, module `?ref=` bumps, CI repairs, doc fixes | PATCH |
 
-> `make gitflow/hotfix/start` automatically computes the branch name as `hotfix/<next-patch-version>` using GitVersion — do not choose the name manually.
+> `tronador versions hotfix start` automatically computes the branch name as `hotfix/<next-patch-version>` using GitVersion — do not choose the name manually.
 
 #### Publishing branches
 
@@ -454,17 +475,17 @@ After committing changes locally, publish the branch to establish upstream track
 
 | Branch type | Publish command |
 |---|---|
-| `feature/` | `make gitflow/feature/publish` |
-| `hotfix/` | `make gitflow/hotfix/publish` |
+| `feature/` | `tronador versions feature publish` |
+| `hotfix/` | `tronador versions hotfix publish` |
 
-#### Opening a pull request via finish targets
+#### Opening a pull request via finish commands
 
-Use the finish targets to create PRs. These targets verify the branch is in sync with remote before creating the PR — always publish first.
+Use the finish commands to create PRs. They verify the branch is in sync with remote before creating the PR — always publish first.
 
 | Branch type | PR creation command |
 |---|---|
-| `feature/` | `make gitflow/feature/finish-no-develop` |
-| `hotfix/` | `make gitflow/hotfix/finish` |
+| `feature/` | `tronador versions feature finish` |
+| `hotfix/` | `tronador versions hotfix finish` |
 
 #### PR body format
 
@@ -518,7 +539,7 @@ When modules are flagged as outdated:
 
 1. Start a hotfix branch:
    ```sh
-   make gitflow/hotfix/start
+   tronador versions hotfix start
    ```
 2. Apply the update, or edit the `source` URL's `?ref=` value by hand to the recommended version shown in the CI warning:
    ```sh
@@ -535,8 +556,8 @@ When modules are flagged as outdated:
    ```
 5. Publish and open the PR:
    ```sh
-   make gitflow/hotfix/publish
-   make gitflow/hotfix/finish
+   tronador versions hotfix publish
+   tronador versions hotfix finish
    ```
 6. Do not modify the hook script itself.
 
@@ -597,7 +618,7 @@ refactor!: replace s3 backend with azurerm +semver: major
 
 ```sh
 # 1. Start branch from master
-make gitflow/feature/start-no-develop:<feature-name>
+tronador versions feature start "<feature-name>"
 
 # 2. Implement changes, then format any changed HCL files
 tronador project format
@@ -610,10 +631,10 @@ git add <specific files>
 git commit -m "feat: <description> +semver: minor"
 
 # 5. Publish branch (sets upstream tracking)
-make gitflow/feature/publish
+tronador versions feature publish
 
 # 6. Open PR against master
-make gitflow/feature/finish-no-develop
+tronador versions feature finish
 
 # 7. Wait for CI checks
 gh pr checks <PR_NUMBER> --watch
@@ -623,7 +644,7 @@ gh pr checks <PR_NUMBER> --watch
 
 ```sh
 # 1. Start hotfix branch (auto-named hotfix/<next-patch-version> by GitVersion)
-make gitflow/hotfix/start
+tronador versions hotfix start
 
 # 2. Apply fix, then format if HCL was changed
 tronador project format
@@ -636,10 +657,10 @@ git add <specific files>
 git commit -m "fix: <description> +semver: patch"
 
 # 5. Publish branch (sets upstream tracking)
-make gitflow/hotfix/publish
+tronador versions hotfix publish
 
 # 6. Open PR against master
-make gitflow/hotfix/finish
+tronador versions hotfix finish
 
 # 7. Wait for CI checks
 gh pr checks <PR_NUMBER> --watch
