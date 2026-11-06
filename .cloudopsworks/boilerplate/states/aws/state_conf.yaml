@@ -1,7 +1,8 @@
 s3:
   bucket: '{{ .terraform_state_bucket}}'
   region: '{{ .terraform_state_region }}'
-  {{- if ne .terraform_state_kms_key_id "" }}
+  {{- if .terraform_state_kms_enabled }}
+  {{- if not .terraform_state_kms_key_id }}{{ fail "terraform_state_kms_key_id is required when terraform_state_kms_enabled is true; set the key or set terraform_state_kms_enabled to false" }}{{ end }}
   kms_key_id: '{{ .terraform_state_kms_key_id }}'
   {{- end }}
   dynamodb_table: '{{ .terraform_state_dynamodb_table }}'
