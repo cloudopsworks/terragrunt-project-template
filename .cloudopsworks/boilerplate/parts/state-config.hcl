@@ -3,7 +3,9 @@ terraform {
   backend "s3" {
     bucket         = "${local.state_conf.s3.bucket}"
     region         = "${local.state_conf.s3.region}"
+%{ if try(local.state_conf.s3.kms_key_id, "") != "" ~}
     kms_key_id     = "${local.state_conf.s3.kms_key_id}"
+%{ endif ~}
     dynamodb_table = "${local.state_conf.s3.dynamodb_table}"
     key            = "${local.state_prefix}/terraform.tfstate"
   }
