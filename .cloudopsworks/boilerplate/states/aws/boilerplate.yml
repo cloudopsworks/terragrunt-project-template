@@ -18,13 +18,17 @@ variables:
     default: "us-east-1"
     validations:
       - required
-  - name: terraform_state_kms_key_id
+  - name: terraform_state_kms_enabled
     order: 3
-    description: "Terraform State KMS Key ID, if not set, no encryption will be used (not recommended)"
-    default: ""
-    validations:
-      - required
-  - name: terraform_state_dynamodb_table
+    description: "Encrypt Terraform State with a KMS Key, disabling it is not recommended"
+    type: bool
+    default: true
+  - name: terraform_state_kms_key_id
     order: 4
+    description: "Terraform State KMS Key ID, required when terraform_state_kms_enabled is true"
+    type: string
+    default: ""
+  - name: terraform_state_dynamodb_table
+    order: 5
     description: "Terraform State DynamoDB Table"
     type: string
