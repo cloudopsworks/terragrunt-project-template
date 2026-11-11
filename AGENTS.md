@@ -49,7 +49,7 @@ The `make` targets set `TRONADOR_AUTO_INIT := true`, which curls `https://cowk.i
 | `terragrunt hcl format …` | `tronador project format` | Alias `tronador project fmt` |
 | `make repos/upgrade` | `tronador repos upgrade` | Latest tag in the current major/minor line |
 | `make repos/upgrade/major` | `tronador repos upgrade major` | Latest tag in the current major line |
-| `.cloudopsworks/hooks/module_versions.sh` | `tronador iac module` | Report mode by default; add `--upgrade` to rewrite `?ref=` pins |
+| `.cloudopsworks/hooks/module_versions.sh` (removed) | `tronador iac module` | Report mode by default; add `--upgrade` to rewrite `?ref=` pins. The hook script no longer ships with the template |
 
 ### Discover capabilities before assuming a command exists
 
@@ -330,7 +330,7 @@ The following files and directories are **owned by the upstream template** and m
 
 ```
 .cloudopsworks/boilerplate/      ← entire directory, all subdirectories
-.cloudopsworks/hooks/            ← entire directory (module_versions.sh, parse_outputs.sh)
+.cloudopsworks/hooks/            ← entire directory (parse_outputs.sh, get-secret.sh)
 .cloudopsworks/_VERSION          ← template version marker
 .cloudopsworks/LICENSE           ← Apache v2.0 license, do not alter
 .cloudopsworks/labeler.yml       ← GitHub PR auto-labeling rules
@@ -517,7 +517,14 @@ The CI plan workflow will run automatically against the PR. Do not merge until t
 
 ### Module Version Checks
 
-The `.cloudopsworks/hooks/module_versions.sh` hook runs automatically in CI to detect outdated `?ref=` version pins in `terragrunt.hcl` files. Locally, use `tronador iac module` rather than invoking the hook directly — it reads the same `.cloudopsworks/.iac` workspace marker and can apply the updates for you.
+`tronador iac module` detects outdated `?ref=` version pins in `terragrunt.hcl` files. It replaces the former `.cloudopsworks/hooks/module_versions.sh` hook, which has been removed from the template. The CI plan and deploy workflows install the CLI with `cloudopsworks/install-tronador-cli@v1` and run it for each changed module directory:
+
+```sh
+tronador iac module -p <module-dir> --report-ghaction                        # deploy workflow
+tronador iac module -p <module-dir> --report-ghaction --comment-pr-num <n>   # plan workflow, comments on the PR
+```
+
+Locally, run the same command. It reads the `.cloudopsworks/.iac` workspace marker and can apply the updates for you.
 
 ```sh
 tronador iac module                          # Report available patch/minor/major targets, change nothing
@@ -559,7 +566,7 @@ When modules are flagged as outdated:
    tronador versions hotfix publish
    tronador versions hotfix finish
    ```
-6. Do not modify the hook script itself.
+6. Do not modify `.github/workflows/` to change how module checks run in CI. Raise an upstream issue instead.
 
 ### CI/CD Governance Updates
 
