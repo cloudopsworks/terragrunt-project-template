@@ -114,6 +114,10 @@ jobs:
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
           echo "owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
+      - name: Install Tronador CLI
+        uses: cloudopsworks/install-tronador-cli@v1
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN }}
@@ -150,7 +154,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         shell: bash
         run: |
-          .cloudopsworks/hooks/module_versions.sh --path ${{ inputs.working_directory }} --report-ghaction
+          tronador iac module -p ${{ inputs.working_directory }} --report-ghaction
       # Run Plan on the working directory only on apply plan or destroy actions (generate plan files)
       - name: "Terragrunt plan: ${{ inputs.working_directory }}"
         id: plan
